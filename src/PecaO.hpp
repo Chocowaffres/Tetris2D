@@ -1,0 +1,88 @@
+// Garante que ficheiro atual apenas é incluído uma vez durante o processo de compilação
+#pragma once 
+
+#include "Peca.hpp"
+
+#define GLEW_STATIC
+#include <GL/glew.h>
+
+#include <chrono>
+#include <vector>
+using namespace std;
+
+// GLM header file
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/type_ptr.hpp>
+using namespace glm;
+
+class PecaO : public Peca
+{
+	private:
+		// Variáveis da peça
+		float xCM;
+		float yCM;
+		int iPieceWidth;
+		int iPieceHeight;
+
+		int yPos;
+		int xPosE;
+		int xPosD;
+
+		// Variáveis de tabuleiro
+		int** gameGrid;
+		int xPosInicial;
+		int yPosInicial;
+		int iHeight;
+		int iWidth;
+
+		// Variáveis de interacao com user
+		int iNumberRotate;
+		int iNumberTranslation;
+		int iNumberDown;
+
+		std::chrono::time_point<std::chrono::steady_clock> t_start;
+
+	public:
+		PecaO();
+		PecaO(int, int, int, int, int**);
+
+		void preencheRealVertex(GLfloat, GLfloat);
+		void modificaQuadricula(GLfloat, GLfloat);
+		void realVertexBuffer();
+
+		bool preencheMatriz(int, int);
+		bool atualizaMatriz();
+		bool avaliaColisao();
+		void atualizaPos();
+		void rotacaoPeca(glm::mat4& rot);
+		void translacaoPeca(glm::mat4& trans);
+
+		// Getters
+		int** getGameGrid();
+
+		int getNumberRotate();
+		int getNumberTranslation();
+		int getNumberDown();
+
+		int getXPosD();
+		int getXPosE();
+
+		// Atualizadores
+		void incNumberRotate();
+		void incNumberTranslation();
+		void decNumberTranslation();
+		void incNumberDown();
+
+		// Desenho geométrico
+		void drawObject();
+
+		// Variáveis de classe
+		// Desenho da peça
+		static std::vector<GLfloat> g_vertex_buffer_data;
+
+		// Cor da peça
+		static std::vector<GLfloat> g_color_buffer_data;
+
+		static std::vector<GLfloat> g_real_vertex_buffer;
+};
