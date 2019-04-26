@@ -1,4 +1,4 @@
-#include "PecaL.hpp"
+#include "headers/PecaL.hpp"
 #include <iostream>
 
 // Construtores
@@ -7,8 +7,8 @@ PecaL::PecaL() {};
 PecaL::PecaL(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** gameGrid) {
 
 	// Variáveis da peça
-	xCM = 1.5;
-	yCM = 0.5;
+	xCR = 1.5;
+	yCR = 0.5;
 	iPieceWidth = 3;
 	iPieceHeight = 2;
 
@@ -340,9 +340,9 @@ void PecaL::atualizaPos() {
 void PecaL::rotacaoPeca(glm::mat4& rot) {
 
 	// Transladar para origem da peça, rodar 90 graus e retornar à sua posição original 
-	rot = glm::translate(rot, glm::vec3(xCM, yCM, 0.0f));
+	rot = glm::translate(rot, glm::vec3(xCR, yCR, 0.0f));
 	rot = glm::rotate(rot, glm::radians(iNumberRotate * -90.f), glm::vec3(0.0f, 0.0f, 1.0f));
-	rot = glm::translate(rot, glm::vec3(-xCM, -yCM, 0.0f));
+	rot = glm::translate(rot, glm::vec3(-xCR, -yCR, 0.0f));
 }
 
 void PecaL::translacaoPeca(glm::mat4& trans) {

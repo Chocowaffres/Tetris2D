@@ -1,4 +1,4 @@
-#include "PecaI.hpp"
+#include "headers/PecaI.hpp"
 #include <iostream>
 
 // Construtores
@@ -7,8 +7,8 @@ PecaI::PecaI() {};
 PecaI::PecaI(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** gameGrid) {
 
 	// Variáveis da peça
-	xCM = 2.0f;
-	yCM = 1.0f;
+	xCR = 2.0f;
+	yCR = 1.0f;
 	iPieceWidth = 4;
 	iPieceHeight = 1;
 
@@ -376,9 +376,9 @@ void PecaI::atualizaPos() {
 void PecaI::rotacaoPeca(glm::mat4& rot) {
 
 	// Transladar para origem da peça, rodar 90 graus e retornar à sua posição original 
-	rot = glm::translate(rot, glm::vec3(xCM, yCM, 0.0f));
+	rot = glm::translate(rot, glm::vec3(xCR, yCR, 0.0f));
 	rot = glm::rotate(rot, glm::radians(iNumberRotate * -90.f), glm::vec3(0.0f, 0.0f, 1.0f));
-	rot = glm::translate(rot, glm::vec3(-xCM, -yCM, 0.0f));
+	rot = glm::translate(rot, glm::vec3(-xCR, -yCR, 0.0f));
 
 }
 
