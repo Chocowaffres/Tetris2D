@@ -1,4 +1,4 @@
-#include "headers/PecaL.hpp"
+Ôªø#include "headers/PecaL.hpp"
 #include "headers/PecaJ.hpp"
 #include "headers/PecaS.hpp"
 #include "headers/PecaI.hpp"
@@ -38,17 +38,21 @@ GLuint VertexArrayID;
 // Vertex buffer object (VBO)
 GLuint vertexbuffer;
 GLuint vertexbufferTot;
+GLuint vertexbufferNextPiece;
 
 // color buffer object (CBO)
 GLuint colorbuffer;
 GLuint colorbufferTot;
+GLuint colorbufferNextPiece;
 
 // GLSL program from the shaders
 GLuint programID;
 
 int const iWidth = 11;
 int const iHeight = 16;
-GLfloat WIDTH = 11.f;
+GLfloat WIDTH_PosXInicial = 11.f;
+GLfloat HEIGHT_PosYInicial = 16.f;
+GLfloat WIDTH = 15.f;
 GLfloat HEIGHT = 16.f;
 GLint WindowHeight = 600;
 GLint WindowWidth = WIDTH / HEIGHT * WindowHeight;
@@ -59,12 +63,34 @@ char WindowTitle[] = "Tetris";
 
 std::chrono::time_point<std::chrono::steady_clock> t_start;
 int** gameGrid;
-// PosiÁ„o inicial da peÁa, no topo e ao centro
-int xPosInicial = (int)WIDTH / 2, yPosInicial = HEIGHT;
+// Posi√ß√£o inicial da pe√ßa, no topo e ao centro
+int xPosInicial = (int)WIDTH_PosXInicial / 2, yPosInicial = HEIGHT_PosYInicial;
 
 GeradorPecas geraPecas;
 int iRandPiece;
+int iRandPieceNextPiece;
 
+// V√©rtices da pe√ßa atual
+std::vector<GLfloat> g_vertex_buffer_data = {};
+
+// Cor da pe√ßa atual
+std::vector<GLfloat> g_color_buffer_data = {};
+
+// V√©rtices de todas as pe√ßas
+std::vector<GLfloat> g_vertex_buffer_dataTot = {};
+
+// Cores de todas as pe√ßas
+std::vector<GLfloat> g_color_buffer_dataTot = {};
+
+// Identificador de matriz MVP nos shaders
+GLuint MVP;
+
+// Matrizes associadas a MVP
+glm::mat4 Projection = glm::mat4(1.0f);
+glm::mat4 View = glm::mat4(1.0f);
+// Model definido nas fun√ß√µes apropriadas
+
+//--------------------------------------------------------------------------------
 
 // Inicializar matriz a zeros
 void incializaMatrizZero() {
@@ -73,37 +99,20 @@ void incializaMatrizZero() {
 		gameGrid[i] = (int*)calloc(iHeight, sizeof(int));
 	}
 }
-  
-
-// VÈrtices da peÁa
-std::vector<GLfloat> g_vertex_buffer_data = {};
-
-// Cor da peÁa
-std::vector<GLfloat> g_color_buffer_data = {};
-
-// VÈrtices de todas as peÁas
-std::vector<GLfloat> g_vertex_buffer_dataTot = {};
-
-// Cores de todas as peÁas
-std::vector<GLfloat> g_color_buffer_dataTot = {};
-
-
-//--------------------------------------------------------------------------------
 
 // Generates random number from 0 to 6 (7 pieces)
-void randNum() {
+int randNum() {
 	// Conferir aleatoriedade
 	srand(time(NULL));
-	iRandPiece = (std::rand() % 7) + 1;
-	//iRandPiece = 7;
-	cout << " Random: " << iRandPiece << endl;
+	int iRandValue = (std::rand() % 7) + 1;
+	return iRandValue;
 }
 
 //--------------------------------------------------------------------------------
 
-Peca* returnPeca(GeradorPecas& geraPecas) {
+Peca* returnPeca(GeradorPecas& geraPecas, int switchValue) {
 	Peca* pecaGenerica;
-	switch (iRandPiece) {
+	switch (switchValue) {
 		case 1:
 			pecaGenerica = &(geraPecas.getPecaZ());
 			geraPecas.criaPecaZ(gameGrid);
@@ -135,51 +144,55 @@ Peca* returnPeca(GeradorPecas& geraPecas) {
 	}
 }
 
-std::vector<GLfloat> vertexBufferPiece(Peca& plPeca) {
-	switch (iRandPiece){
-		case 1: return dynamic_cast<PecaZ&>(plPeca).g_vertex_buffer_data;
-		case 2: return dynamic_cast<PecaT&>(plPeca).g_vertex_buffer_data;
-		case 3: return dynamic_cast<PecaJ&>(plPeca).g_vertex_buffer_data;
-		case 4: return dynamic_cast<PecaS&>(plPeca).g_vertex_buffer_data;
-		case 5: return dynamic_cast<PecaO&>(plPeca).g_vertex_buffer_data;
-		case 6: return dynamic_cast<PecaL&>(plPeca).g_vertex_buffer_data;
-		case 7: return dynamic_cast<PecaI&>(plPeca).g_vertex_buffer_data;
+std::vector<GLfloat> vertexBufferPiece(Peca& pPeca, int switchValue) {
+	switch (switchValue) {
+		case 1: return dynamic_cast<PecaZ&>(pPeca).g_vertex_buffer_data;
+		case 2: return dynamic_cast<PecaT&>(pPeca).g_vertex_buffer_data;
+		case 3: return dynamic_cast<PecaJ&>(pPeca).g_vertex_buffer_data;
+		case 4: return dynamic_cast<PecaS&>(pPeca).g_vertex_buffer_data;
+		case 5: return dynamic_cast<PecaO&>(pPeca).g_vertex_buffer_data;
+		case 6: return dynamic_cast<PecaL&>(pPeca).g_vertex_buffer_data;
+		case 7: return dynamic_cast<PecaI&>(pPeca).g_vertex_buffer_data;
 	}
 }
 
-std::vector<GLfloat> colorBufferPiece(Peca& plPeca) {
-	switch (iRandPiece){
-		case 1: return dynamic_cast<PecaZ&>(plPeca).g_color_buffer_data;
-		case 2: return dynamic_cast<PecaT&>(plPeca).g_color_buffer_data;
-		case 3: return dynamic_cast<PecaJ&>(plPeca).g_color_buffer_data;
-		case 4: return dynamic_cast<PecaS&>(plPeca).g_color_buffer_data;
-		case 5: return dynamic_cast<PecaO&>(plPeca).g_color_buffer_data;
-		case 6: return dynamic_cast<PecaL&>(plPeca).g_color_buffer_data;
-		case 7: return dynamic_cast<PecaI&>(plPeca).g_color_buffer_data;
+std::vector<GLfloat> colorBufferPiece(Peca& pPeca, int switchValue) {
+	switch (switchValue) {
+		case 1: return dynamic_cast<PecaZ&>(pPeca).g_color_buffer_data;
+		case 2: return dynamic_cast<PecaT&>(pPeca).g_color_buffer_data;
+		case 3: return dynamic_cast<PecaJ&>(pPeca).g_color_buffer_data;
+		case 4: return dynamic_cast<PecaS&>(pPeca).g_color_buffer_data;
+		case 5: return dynamic_cast<PecaO&>(pPeca).g_color_buffer_data;
+		case 6: return dynamic_cast<PecaL&>(pPeca).g_color_buffer_data;
+		case 7: return dynamic_cast<PecaI&>(pPeca).g_color_buffer_data;
 	}
 }
 
 
-std::vector<GLfloat>* realVertexBufferPiece(Peca& plPeca) {
-	switch (iRandPiece){
-		case 1: return &dynamic_cast<PecaZ&>(plPeca).g_real_vertex_buffer;
-		case 2: return &dynamic_cast<PecaT&>(plPeca).g_real_vertex_buffer;
-		case 3: return &dynamic_cast<PecaJ&>(plPeca).g_real_vertex_buffer;
-		case 4: return &dynamic_cast<PecaS&>(plPeca).g_real_vertex_buffer;
-		case 5: return &dynamic_cast<PecaO&>(plPeca).g_real_vertex_buffer;
-		case 6: return &dynamic_cast<PecaL&>(plPeca).g_real_vertex_buffer;
-		case 7: return &dynamic_cast<PecaI&>(plPeca).g_real_vertex_buffer;
+std::vector<GLfloat>* realVertexBufferPiece(Peca& pPeca) {
+	switch (iRandPiece) {
+	case 1: return &dynamic_cast<PecaZ&>(pPeca).g_real_vertex_buffer;
+	case 2: return &dynamic_cast<PecaT&>(pPeca).g_real_vertex_buffer;
+	case 3: return &dynamic_cast<PecaJ&>(pPeca).g_real_vertex_buffer;
+	case 4: return &dynamic_cast<PecaS&>(pPeca).g_real_vertex_buffer;
+	case 5: return &dynamic_cast<PecaO&>(pPeca).g_real_vertex_buffer;
+	case 6: return &dynamic_cast<PecaL&>(pPeca).g_real_vertex_buffer;
+	case 7: return &dynamic_cast<PecaI&>(pPeca).g_real_vertex_buffer;
 	}
 }
 
 //--------------------------------------------------------------------------------
 
-void transferDataToGPUMemoryOfPiece(Peca& plPeca)
+void transferDataToGPUMemory(Peca& pPeca, Peca& pNextPeca)
 {
 
-	// Recolha de informaÁ„o de vertices e cor da peÁa
-	g_vertex_buffer_data = vertexBufferPiece(plPeca);
-	g_color_buffer_data = colorBufferPiece(plPeca);
+	// Recolha de informa√ß√£o de vertices e cor da pe√ßa atual
+	g_vertex_buffer_data = vertexBufferPiece(pPeca, iRandPiece);
+	g_color_buffer_data = colorBufferPiece(pPeca, iRandPiece);
+
+	// Recolha de informa√ß√£o de vertices e cor da pr√≥xima pe√ßa pe√ßa
+	std::vector<GLfloat> g_vertex_buffer_data_next_piece = vertexBufferPiece(pNextPeca, iRandPieceNextPiece);
+	std::vector<GLfloat> g_color_buffer_data_next_piece = colorBufferPiece(pNextPeca, iRandPieceNextPiece);
 
 	// Move vertex data to video memory; specifically to VBO called vertexbuffer,
 	glGenBuffers(1, &vertexbuffer);
@@ -190,6 +203,25 @@ void transferDataToGPUMemoryOfPiece(Peca& plPeca)
 	glGenBuffers(1, &colorbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
 	glBufferData(GL_ARRAY_BUFFER, g_color_buffer_data.size() * sizeof(float), g_color_buffer_data.data(), GL_STATIC_DRAW);
+
+
+	// Carregar informa√ß√£o de todas as pe√ßas anteriormente jogadas
+	glGenBuffers(1, &vertexbufferTot);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferTot);
+	glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_dataTot.size() * sizeof(float), g_vertex_buffer_dataTot.data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &colorbufferTot);
+	glBindBuffer(GL_ARRAY_BUFFER, colorbufferTot);
+	glBufferData(GL_ARRAY_BUFFER, g_color_buffer_dataTot.size() * sizeof(float), g_color_buffer_dataTot.data(), GL_STATIC_DRAW);
+
+	// Carregar informa√ß√£o pr√≥xima pe√ßa
+	glGenBuffers(1, &vertexbufferNextPiece);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferNextPiece);
+	glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data_next_piece.size() * sizeof(float), g_vertex_buffer_data_next_piece.data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &colorbufferNextPiece);
+	glBindBuffer(GL_ARRAY_BUFFER, colorbufferNextPiece);
+	glBufferData(GL_ARRAY_BUFFER, g_color_buffer_data_next_piece.size() * sizeof(float), g_color_buffer_data_next_piece.data(), GL_STATIC_DRAW);
 
 }
 
@@ -207,29 +239,29 @@ void cleanupDataFromGPU()
 //--------------------------------------------------------------------------------
 
 int newSize;
-// Caso haja uma linha completa, esta ser· eliminada na matriz de inteiros. Esta funÁ„o garante que o observado no campo de jogo
-// È concordante com o ocorrido na matriz de inteiros
-void eliminaLinha(int iLinha) 
+// Caso haja uma linha completa, esta ser√° eliminada na matriz de inteiros. Esta fun√ß√£o garante que o observado no campo de jogo
+// √© concordante com o ocorrido na matriz de inteiros
+void eliminaLinha(int iLinha)
 {
 	int i;
 	newSize = g_vertex_buffer_dataTot.size();
-	for (i = 0; i < newSize; i += 18){
+	for (i = 0; i < newSize; i += 18) {
 		// Limpar bloco a bloco
-		if (g_vertex_buffer_dataTot.at(i+1) == iLinha){
+		if (g_vertex_buffer_dataTot.at(i + 1) == iLinha) {
 
 			for (int k = i; k < g_vertex_buffer_dataTot.size() - 18; k++) {
 				g_vertex_buffer_dataTot.at(k) = g_vertex_buffer_dataTot.at(k + 18);
 				g_color_buffer_dataTot.at(k) = g_color_buffer_dataTot.at(k + 18);
 			}
 
-			// AtualizaÁ„o de vari·veis
+			// Atualiza√ß√£o de vari√°veis
 			newSize -= 18;
 			i -= 18;
 		}
 		else {
 			if (g_vertex_buffer_dataTot.at(i + 1) > iLinha) {
-				for (int j = 1; j < 18; j += 3){
-					// Atualizar altura (y) de todos os vÈrtices de blocos superiores ‡ linha a eliminar
+				for (int j = 1; j < 18; j += 3) {
+					// Atualizar altura (y) de todos os v√©rtices de blocos superiores √† linha a eliminar
 					g_vertex_buffer_dataTot.at(i + j) = g_vertex_buffer_dataTot.at(i + j) - 1;
 				}
 			}
@@ -239,26 +271,26 @@ void eliminaLinha(int iLinha)
 
 //--------------------------------------------------------------------------------
 
-// Atualiza matriz de inteiros, visando concord‚ncia com o observado no campo de jogo. Nesta funÁ„o todas as linhas acima de iLinha,
-// a linha a eliminar, ser„o substituidas pelas seguintes destas
+// Atualiza matriz de inteiros, visando concord√¢ncia com o observado no campo de jogo. Nesta fun√ß√£o todas as linhas acima de iLinha,
+// a linha a eliminar, ser√£o substituidas pelas seguintes destas
 void atualizaCampoJogo(int iLinha)
 {
-	for (int i = iLinha; i < iHeight - 1 ; i++)
+	for (int i = iLinha; i < iHeight - 1; i++)
 	{
 		for (int j = 0; j < iWidth; j++)
 		{
-			gameGrid[j][i] = gameGrid[j][i+1];
+			gameGrid[j][i] = gameGrid[j][i + 1];
 		}
 	}
 }
 //--------------------------------------------------------------------------------
 
-// Verifica, na matriz de inteiros, linhas que apenas contenham 1's, ou seja, linhas que ter„o de ser eliminadas
+// Verifica, na matriz de inteiros, linhas que apenas contenham 1's, ou seja, linhas que ter√£o de ser eliminadas
 std::vector <int> avaliaEliminacaoLinhas(int** gameGrid) {
 	int j;
 	std::vector <int> vetorLinhasAEliminar;
-	for (int i = 0; i < iHeight; i++){
-		for (j = 0; j < iWidth; j++){
+	for (int i = 0; i < iHeight; i++) {
+		for (j = 0; j < iWidth; j++) {
 			if (gameGrid[j][i] == 1) {
 				continue;
 			}
@@ -274,22 +306,22 @@ std::vector <int> avaliaEliminacaoLinhas(int** gameGrid) {
 
 //--------------------------------------------------------------------------------
 
-bool evaluatePieceCollision(Peca& plPeca) {
+bool evaluatePieceCollision(Peca& pPeca) {
 
-	// Avaliar colis„o
-	if (plPeca.avaliaColisao()) {
+	// Avaliar colis√£o
+	if (pPeca.avaliaColisao()) {
 
 		// Avalia se jogo terminou
-		if (plPeca.atualizaMatriz()) {
+		if (pPeca.atualizaMatriz()) {
 			cout << "GAME OVER" << endl;
 			getchar();
 			exit(0);
 		}
 
-		// Atualiza vertexBuffer da peÁa, mediante o local onde esta colidiu
-		plPeca.realVertexBuffer();
+		// Atualiza vertexBuffer da pe√ßa, mediante o local onde esta colidiu
+		pPeca.realVertexBuffer();
 		// Receber grelha de jogo (matriz de inteiros) atualizada
-		gameGrid = plPeca.getGameGrid();
+		gameGrid = pPeca.getGameGrid();
 
 		cout << "COLISAO" << endl;
 		for (int i = iHeight - 1; i >= 0; i--) {
@@ -299,19 +331,19 @@ bool evaluatePieceCollision(Peca& plPeca) {
 			cout << endl;
 		}
 
-		// Recolher vertexBuffer de peÁa colidida para armazenar no vertexBuffer de todas as outras peÁas anteriormente jogadas
-		// O vertexBuffer recebido tem em conta o posicionamento da peÁa aquando da colis„o
-		std::vector<GLfloat>* vertexBuffer = realVertexBufferPiece(plPeca);
+		// Recolher vertexBuffer de pe√ßa colidida para armazenar no vertexBuffer de todas as outras pe√ßas anteriormente jogadas
+		// O vertexBuffer recebido tem em conta o posicionamento da pe√ßa aquando da colis√£o
+		std::vector<GLfloat>* vertexBuffer = realVertexBufferPiece(pPeca);
 
-		// Anexar informaÁ„o de nova peÁa colidida com peÁas anteriormente jogadas
+		// Anexar informa√ß√£o de nova pe√ßa colidida com pe√ßas anteriormente jogadas
 		g_vertex_buffer_dataTot.insert(g_vertex_buffer_dataTot.end(), (*vertexBuffer).begin(), (*vertexBuffer).end());
 		g_color_buffer_dataTot.insert(g_color_buffer_dataTot.end(), g_color_buffer_data.begin(), g_color_buffer_data.end());
 
-		// Verificar se nova colis„o de peÁa promove eliminaÁ„o de linhas
+		// Verificar se nova colis√£o de pe√ßa promove elimina√ß√£o de linhas
 		std::vector<int> vLinhasAEliminar = avaliaEliminacaoLinhas(gameGrid);
 		if (vLinhasAEliminar.size() != 0) {
-			// ComeÁas a eliminar as linhas do topo e ir descendo, daÌ a invers„o do vetor
-			for (int i = vLinhasAEliminar.size()-1; i >= 0; i--){
+			// Come√ßas a eliminar as linhas do topo e ir descendo, da√≠ a invers√£o do vetor
+			for (int i = vLinhasAEliminar.size() - 1; i >= 0; i--) {
 				eliminaLinha(vLinhasAEliminar[i]);
 				atualizaCampoJogo(vLinhasAEliminar[i]);
 				g_vertex_buffer_dataTot.resize(newSize);
@@ -319,57 +351,38 @@ bool evaluatePieceCollision(Peca& plPeca) {
 			}
 		}
 
-		// Carregar informaÁ„o de todas as peÁas jogadas, com informaÁ„o de nova peÁa colidida
-		glGenBuffers(1, &colorbufferTot);
-		glBindBuffer(GL_ARRAY_BUFFER, colorbufferTot);
-		glBufferData(GL_ARRAY_BUFFER, g_color_buffer_dataTot.size() * sizeof(float), g_color_buffer_dataTot.data(), GL_STATIC_DRAW);
-
-		glGenBuffers(1, &vertexbufferTot);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbufferTot);
-		glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_dataTot.size() * sizeof(float), g_vertex_buffer_dataTot.data(), GL_STATIC_DRAW);
-
 		return true;
 	}
 
-	// PeÁa n„o colidiu com nenhuma outra ou base de campo de jogo
+	// Pe√ßa n√£o colidiu com nenhuma outra ou base de campo de jogo
 	return false;
 }
 
 //--------------------------------------------------------------------------------
 
-bool drawObject(Peca& plPeca)
+bool drawObject(Peca& pPeca)
 {
 	// Use our shader
 	glUseProgram(programID);
 
-	// Vari·vel auxiliar para que nos shaders sejam aplicada translaÁıes e rotaÁıes a peÁa atual
-	unsigned int globalBool = glGetUniformLocation(programID, "bPreviousPieces");
-	glUniform1i(globalBool, false);
-
-	// DefiniÁ„o de matrizes
-	glm::mat4 mvp = glm::ortho(0.0f, WIDTH, 0.0f, HEIGHT);
+	// Defini√ß√£o de matrizes
 	glm::mat4 trans = glm::mat4(1.0f);
 	glm::mat4 rot = glm::mat4(1.0f);
 
-	// AplicaÁ„o de rotaÁ„o ‡ peÁa
-	plPeca.rotacaoPeca(rot);
-	// AplicaÁ„o de translaÁ„o ‡ peÁa
-	plPeca.translacaoPeca(trans);
+	// Aplica√ß√£o de rota√ß√£o √† pe√ßa
+	pPeca.rotacaoPeca(rot);
+	// Aplica√ß√£o de transla√ß√£o √† pe√ßa
+	pPeca.translacaoPeca(trans);
+
+	glm::mat4 MVP_PecaAtual = Projection * View * trans * rot;
 
 	// retrieve the matrix uniform locations
-	unsigned int globalMVP = glGetUniformLocation(programID, "mvp");
-	glUniformMatrix4fv(globalMVP, 1, GL_FALSE, &mvp[0][0]);
-
-	unsigned int globalTrans = glGetUniformLocation(programID, "trans");
-	glUniformMatrix4fv(globalTrans, 1, GL_FALSE, &trans[0][0]);
-	
-	unsigned int globalRot = glGetUniformLocation(programID, "rot");
-	glUniformMatrix4fv(globalRot, 1, GL_FALSE, &rot[0][0]);
+	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_PecaAtual[0][0]);
 
 	// 1st attribute buffer : vertices
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0 );
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// 2nd attribute buffer : colors
 	glEnableVertexAttribArray(1);
@@ -377,25 +390,26 @@ bool drawObject(Peca& plPeca)
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// Desenha objeto
-	plPeca.drawObject();
+	pPeca.drawObject();
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 
-	// Retorna informaÁ„o para main se deve instanciar nova peÁa, ou seja, se presente peÁa colidiu
-	return evaluatePieceCollision(plPeca);
+	// Retorna informa√ß√£o para main se deve instanciar nova pe√ßa, ou seja, se presente pe√ßa colidiu
+	return evaluatePieceCollision(pPeca);
 }
 
 //--------------------------------------------------------------------------------
 
-void drawPreviousObjects(Peca& pPeca) {
+void drawPreviousObjects() {
 
 	// Use our shader
 	glUseProgram(programID);
 
-	// Vari·vel auxiliar para que nos shaders n„o sejam aplicada translaÁıes e rotaÁıes a peÁas anteriormente jogadas
-	unsigned int globalBool = glGetUniformLocation(programID, "bPreviousPieces");
-	glUniform1i(globalBool, true);
+	glm::mat4 MVP_PecaAnteriormenteJogadas = Projection * View;
+
+	// retrieve the matrix uniform locations
+	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_PecaAnteriormenteJogadas[0][0]);
 
 	// 1st attribute buffer : vertices
 	glEnableVertexAttribArray(0);
@@ -412,35 +426,82 @@ void drawPreviousObjects(Peca& pPeca) {
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
-
 }
 
 //--------------------------------------------------------------------------------
 
+void drawNextPiece(Peca& pPeca) {
+
+	// Use our shader
+	glUseProgram(programID);
+
+	glm::mat4 MVP_ProximaPecaAJogar = Projection * View;
+
+	// retrieve the matrix uniform locations
+	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_ProximaPecaAJogar[0][0]);
+
+	// 1st attribute buffer : vertices
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferNextPiece);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	// 2nd attribute buffer : colors
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, colorbufferNextPiece);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	// Draw all the previously played pieces
+	glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_data.size());
+
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+}
+
+
+//--------------------------------------------------------------------------------
+void setMVP() {
+
+	// VAO
+	glGenVertexArrays(1, &VertexArrayID);
+	glBindVertexArray(VertexArrayID);
+
+	// Create and compile our GLSL program from the shaders
+	programID = LoadShaders(vertexShader, fragmentShader);
+
+	// Get a handle for our "MVP" uniform
+	MVP = glGetUniformLocation(programID, "MVP");
+
+	// Projection matrix : 45‚àû Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
+	Projection = glm::ortho(0.0f, WIDTH, 0.0f, HEIGHT);
+}
+
+
+//--------------------------------------------------------------------------------
+
 // Retains information of user inputs, regarding piece movement
-void registerUserInputs(Peca& plPeca) {
+void registerUserInputs(Peca& pPeca) {
 
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_RELEASE) {
-			plPeca.incNumberRotate();
+			pPeca.incNumberRotate();
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_RELEASE) {
-			if (plPeca.getXPosD() < iWidth) {
-				plPeca.incNumberTranslation();
+			if (pPeca.getXPosD() < iWidth) {
+				pPeca.incNumberTranslation();
 			}
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_RELEASE) {
-			if (plPeca.getXPosE() > 0) {
-				plPeca.decNumberTranslation();
+			if (pPeca.getXPosE() > 0) {
+				pPeca.decNumberTranslation();
 			}
 		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-		plPeca.incNumberDown();
+		pPeca.incNumberDown();
 	}
 }
 
@@ -453,7 +514,7 @@ int main(void)
 	// Initialise GLFW
 	glfwInit();
 
-	glfwWindowHint(GLFW_SAMPLES, 4); 
+	glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
@@ -474,46 +535,61 @@ int main(void)
 
 	// Black background
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	//PecaT plPeca = PecaT(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid);
+
+	// Definir vari√°veis associadas a programa e MVP
+	setMVP();
+
+	// Cria√ß√£o de gerador de pe√ßas
 	geraPecas = GeradorPecas(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid);
 
-	// Gera valor aletÛrio, correspondente a peÁa de tabuleiro
-	randNum();
+	// Gera valor alet√≥rio, correspondente a pe√ßa de tabuleiro
+	iRandPiece = randNum();
+	Peca* pPeca = returnPeca(geraPecas, iRandPiece);
 
-	Peca* plPeca = returnPeca(geraPecas);
+	cout << "1. 1st Rand = " << iRandPiece << endl;
 
-	// VAO
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
+	// Gera novo valor alet√≥rio, correspondente √† pr√≥xima pe√ßa de tabuleiro
+	iRandPiece = randNum();
+	iRandPieceNextPiece = randNum();
+	Peca* pNextpPeca = returnPeca(geraPecas, iRandPieceNextPiece);
 
-	// Create and compile our GLSL program from the shaders
-	programID = LoadShaders(vertexShader, fragmentShader);
+	cout << "2. 1st Rand = " << iRandPiece << ", 2nd Rand = " << iRandPieceNextPiece << endl;
 
 	// transfer my data (vertices, colors, and shaders) to GPU side
-	transferDataToGPUMemoryOfPiece(*plPeca);
-	
+
+	GLuint FramebufferName = 0;
+	glGenFramebuffers(1, &FramebufferName);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	// render scene for each frame
 	do {
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glClear(GL_COLOR_BUFFER_BIT);
+		transferDataToGPUMemory(*pPeca, *pNextpPeca);
 
 		// Register user inputs regarding piece movement
-		registerUserInputs(*plPeca);
+		registerUserInputs(*pPeca);
 
 		// Draw previously played pieces into the board
-		drawPreviousObjects(*plPeca);
+		glViewport(0, 0, WindowWidth, WindowHeight);
+		drawPreviousObjects();
 
 		// drawing callback
-		if (drawObject(*plPeca)) {
-			randNum();
-			cout << " RANDOM PIECE: " << iRandPiece << endl;
-			
-			// Retorna a peÁa aleatoriamente criada
-			plPeca = returnPeca(geraPecas);
+		glViewport(0, 0, WindowWidth, WindowHeight);
+		if (drawObject(*pPeca)) {
 
-			transferDataToGPUMemoryOfPiece(*plPeca);
-			drawObject(*plPeca);
+			// Instanciar a mesma pe√ßa que "iRandPieceNextPiece" indicou que vinha
+			iRandPiece = iRandPieceNextPiece;
+			pPeca = returnPeca(geraPecas, iRandPiece);
+
+			// Alterar vari√°vel aleat√≥ria para gerar pr√≥xima pe√ßa
+			iRandPieceNextPiece = randNum();
+			cout << " RANDOM PIECE: " << iRandPiece << endl;
+
 		}
+
+		// Representa a pr√≥xima pe√ßa
+		glViewport(WindowWidth*0.8, WindowHeight*0.5, WindowWidth*0.6, WindowHeight*0.6);
+		drawNextPiece(*pNextpPeca);
 
 		// Swap buffer
 		glfwSwapBuffers(window);
