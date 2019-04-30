@@ -5,10 +5,7 @@ layout(location = 0) in vec3 vertexPosition;
 layout(location = 1) in vec3 vertexColor;
 
 // Values that stay constant for the whole mesh.
-uniform mat4 mvp;
-uniform mat4 rot;
-uniform mat4 trans;
-uniform bool bPreviousPieces;
+uniform mat4 MVP;
 
 // Output fragment data 
 out vec3 fragmentColor;
@@ -16,12 +13,8 @@ out vec3 fragmentColor;
 void main()
 {
 
-	gl_Position = mvp * trans * rot * vec4(vertexPosition, 1.0);
-	// Previously played pieces
-	if (bPreviousPieces) {
-		gl_Position = mvp * vec4(vertexPosition, 1.0);
-	}
-	
+	gl_Position = MVP * vec4(vertexPosition, 1.0);
+
 	// the vertex shader just passes the color to fragment shader
 	fragmentColor = vertexColor;
 
