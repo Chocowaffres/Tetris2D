@@ -58,7 +58,7 @@ int const iWidth = 11;
 int const iHeight = 16;
 GLfloat WIDTH_PosXInicial = 11.f;
 GLfloat HEIGHT_PosYInicial = 16.f;
-GLfloat WIDTH = 15.f;
+GLfloat WIDTH = 15.f; // 15. 0 f
 GLfloat HEIGHT = 16.f;
 GLint WindowHeight = 600;
 GLint WindowWidth = WIDTH / HEIGHT * WindowHeight;
@@ -607,15 +607,15 @@ int main(void)
 	geraPecas = GeradorPecas(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid);
 
 	// Gera valor aletório, correspondente a peça de tabuleiro
-	//iRandPiece = randNum();
-	int valorTeste = 7;
-	iRandPiece = valorTeste;
+	iRandPiece = randNum();
+	// int valorTeste = 6;
+	// iRandPiece = valorTeste;
 	Peca* pPeca = returnPeca(geraPecas, iRandPiece);
 
 
 	// Gera novo valor aletório, correspondente à próxima peça de tabuleiro
-	//iRandPieceNextPiece = randNum();
-	iRandPieceNextPiece = valorTeste;
+	iRandPieceNextPiece = randNum();
+	// iRandPieceNextPiece = valorTeste;
 	Peca* pNextpPeca = returnPeca(geraPecas, iRandPieceNextPiece);
 
 	// transfer my data (vertices, colors, and shaders) to GPU side
@@ -646,8 +646,8 @@ int main(void)
 			pPeca = returnPeca(geraPecas, iRandPiece);
 
 			// Alterar variável aleatória para gerar próxima peça
-			// iRandPieceNextPiece = randNum();
-			iRandPieceNextPiece = valorTeste;
+			iRandPieceNextPiece = randNum();
+			// iRandPieceNextPiece = valorTeste;
 
 		}
 

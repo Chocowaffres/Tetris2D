@@ -192,7 +192,7 @@ bool PecaO::preencheMatriz(int x, int y) {
 		}
 		// Largura
 		for (int j = 0; j < iPieceWidth; j++) {
-			gameGrid[x+j][y+i] = 1;
+			gameGrid[x + j][y + i] = 1;
 		}
 	}
 

@@ -256,13 +256,6 @@ bool PecaZ::preencheMatrizCaso1e3(int x, int y) {
 	y = y + 1;
 	x = x + 1;
 
-	// Acertos nas interações com limites laterais de janela de jogo
-	if (x >= iWidth) {
-		x--;
-		xPosE--;
-		xPosD--;
-	}
-
 	// Jogo acabou
 	if (y > iHeight) {
 		return true;
@@ -300,17 +293,17 @@ bool PecaZ::atualizaMatriz() {
 
 bool PecaZ::avaliaPotencialRotacaoCaso0e2(int x, int y, int iPieceWidth) {
 
-	// Andar de baixo
-	x = x + 1;
-
 	// Acertos nas interações com limites laterais de janela de jogo
-	if (x >= iWidth) {
+	if (x < 0) {
+		x++;
+	}
+	if (x + iPieceWidth >= iWidth) {
 		x--;
-		xPosE--;
-		xPosD--;
 	}
 
-
+	// Andar de baixo
+	x = x + 1;
+	
 	for (int i = 0; i < iPieceWidth - 1; i++) {
 		if (gameGrid[x + i][y] == 1) {
 			return false;
@@ -341,9 +334,19 @@ bool PecaZ::avaliaPotencialRotacaoCaso0e2(int x, int y, int iPieceWidth) {
 
 bool PecaZ::avaliaPotencialRotacaoCaso1e3(int x, int y, int iPieceHeight) {
 
+	// Acertos nas interações com limites laterais de janela de jogo
+	if (x < 0) {
+		x++;
+	}
+	// Largura de case 1 e 3 = (Altura de case 0 e 2) - 1
+	if (x + (iPieceHeight - 1) >= iWidth) {
+		x--;
+	}
+
 	// Lado direito
 	y = y + 1;
 	x = x + 1;
+
 
 	// Jogo acabou
 	if (y > iHeight) {
@@ -389,13 +392,6 @@ bool PecaZ::avaliaColisao() {
 	bCollisionRight = false;
 	bRotationAllowed = true;
 
-	// Colisão com bordas da janela de visualização
-	if (xPosE == 0) {
-		bCollisionLeft = true;
-	}
-	if (xPosD == iWidth - 1) {
-		bCollisionRight = true;
-	}
 
 	// Colisão com base de jogo
 	if (yPos == 0) {
@@ -428,13 +424,16 @@ bool PecaZ::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iVariavelCiclo_AvaliaRotacaoSeguinte = 3;
-			yPos_AvaliaRotacaoSeguinte = yPos - 1; // Igual em case 1 e 3
+			yPos_AvaliaRotacaoSeguinte = 
+				(iNumberRotate % 4 == 0) ?
+				yPos - 1 : // Case 1
+				yPos // Case 3
+				; 
 			xPosE_AvaliaRotacaoSeguinte = 
 				(iNumberRotate % 4 == 0) ? 
-					xPosE + 1 : // Case 1
+					xPosE + 1: // Case 1
 					xPosE // Case 3
 				;
 
@@ -474,15 +473,18 @@ bool PecaZ::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iVariavelCiclo_AvaliaRotacaoSeguinte = 3;
 			yPos_AvaliaRotacaoSeguinte = 
 				(iNumberRotate % 4 == 1) ?
-				yPos - 1 : // Case 2
-				yPos // Case 0
+				yPos : // Case 2
+				yPos + 1 // Case 0
 				;
-			xPosE_AvaliaRotacaoSeguinte = xPosE;  // Igual em case 0 e 2
+			xPosE_AvaliaRotacaoSeguinte = 
+				(iNumberRotate % 4 == 1) ?
+				xPosE - 1 : // Case 2
+				xPosE // Case 0
+				; 
 
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacaoCaso0e2(
@@ -516,7 +518,7 @@ void PecaZ::atualizaPos() {
 				xPosE++;
 				xPosD++;
 			}
-			if (xPosD >= iWidth) {
+			if (xPosD > iWidth) {
 				// Garantir que peça se mantém dentro da janela de visualização 
 				iNumberTranslation--;
 				// Reajustar posição da peça resultante de ajuste

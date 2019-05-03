@@ -249,26 +249,26 @@ bool PecaI::atualizaMatriz() {
 
 bool PecaI::avaliaPotencialRotacao(int x, int y, int iPieceHeight, int xPosE, int xPosD) {
 
-	int ** gameGridTemp = (int**)calloc(iWidth, sizeof(int*));
-	for (int i = 0; i < iWidth; i++) {
-		gameGridTemp[i] = (int*)calloc(iHeight, sizeof(int));
-	}
-
-	for (int i = 0; i < iWidth; i++) {
-		for (int j = 0; j < iHeight; j++) {
-			gameGridTemp[i][j] = gameGrid[i][j];
-		}
-	}
 	// Acertos nas interações com limites laterais de janela de jogo
 	if (x < 0) {
 		x++;
 		xPosE++;
 		xPosD++;
+		if (x < 0) {
+			x++;
+			xPosE++;
+			xPosD++;
+		}
 	}
-	if (x >= iWidth) {
+	if (x + (xPosD - xPosE) >= iWidth) {
 		x--;
 		xPosE--;
 		xPosD--;
+		if (x + (xPosD - xPosE) >= iWidth) {
+			x--;
+			xPosE--;
+			xPosD--;
+		}
 	}
 
 	// Altura
@@ -277,29 +277,14 @@ bool PecaI::avaliaPotencialRotacao(int x, int y, int iPieceHeight, int xPosE, in
 			return false;
 		}
 		if (gameGrid[x][y + i] == 1) {
-			gameGridTemp[x][y + i] = 3;
-			for (int i = iHeight - 1; i >= 0; i--) {
-				for (int j = 0; j < iWidth; j++) {
-					cout << gameGridTemp[j][i] << ", ";
-				}
-				cout << endl;
-			}
-			cout << endl;
 			return false;
 
 		}
 	}
+
 	// Largura
 	for (int i = xPosE; i < xPosD; i++) {
 		if (gameGrid[i][y] == 1) {
-			gameGridTemp[i][y] = 2;
-			for (int i = iHeight - 1; i >= 0; i--) {
-				for (int j = 0; j < iWidth; j++) {
-					cout << gameGridTemp[j][i] << ", ";
-				}
-				cout << endl;
-			}
-			cout << endl;
 			return false;
 		}
 	}
@@ -321,14 +306,6 @@ bool PecaI::avaliaColisao() {
 	bCollisionLeft = false;
 	bCollisionRight = false;
 	bRotationAllowed = true;
-
-	// Colisão com bordas da janela de visualização
-	if (xPosE == 0) {
-		bCollisionLeft = true;
-	}
-	if (xPosD == iWidth - 1) {
-		bCollisionRight = true;
-	}
 
 	// Colisão com base de jogo
 	if (yPos == 0) {
@@ -362,14 +339,17 @@ bool PecaI::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 4;
 			iPieceWidth_AvaliaRotacaoSeguinte = 1;
-			yPos_AvaliaRotacaoSeguinte = yPos - 1; // Igual em case 1 e 3
+			yPos_AvaliaRotacaoSeguinte = 
+				(iNumberRotate % 4 == 0) ?
+				yPos - 1 : // Case 1
+				yPos - 2 // Case 3
+				;
 			xPosE_AvaliaRotacaoSeguinte =
 				(iNumberRotate % 4 == 0) ?
-				xPosE + 1 : // Case 1
+				xPosE + 1: // Case 1
 				xPosE + 2 // Case 3
 				;
 
@@ -408,15 +388,18 @@ bool PecaI::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
-			iPieceHeight_AvaliaRotacaoSeguinte = 4;
-			iPieceWidth_AvaliaRotacaoSeguinte = 1;
-			xPosE_AvaliaRotacaoSeguinte = xPosE; // Igual em case 1 e 3
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
+			iPieceHeight_AvaliaRotacaoSeguinte = 1;
+			iPieceWidth_AvaliaRotacaoSeguinte = 4;
+			xPosE_AvaliaRotacaoSeguinte =
+				(iNumberRotate % 4 == 1) ?
+				xPosE - 1 : // Case 2
+				xPosE - 2  // Case 0
+				;
 			yPos_AvaliaRotacaoSeguinte =
 				(iNumberRotate % 4 == 1) ?
-				yPos + 1 : // Case 2
-				yPos // Case 0
+				yPos + 2: // Case 2
+				yPos + 1 // Case 0
 				;
 
 			// Verificar rotação por recurso a função
@@ -425,9 +408,8 @@ bool PecaI::avaliaColisao() {
 				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 			);
-		
 
-			break;;
+			break;
 	}
 
 	/* Apena agora será retornado o valor de colisão para garantir que as restantes variáveis (bCollisionLeft e bCollisionRight)
@@ -508,10 +490,10 @@ void PecaI::atualizaPos() {
 			// Rotação junto da parede do lado direito
 			if (xPosD > iWidth) {
 				// Garantir que peça se mantém dentro da janela de visualização
-				iNumberTranslation--;
+				iNumberTranslation -= 2;
 				// Reajustar posição da peça resultante de ajuste
-				xPosE--;
-				xPosD--;
+				xPosE -= 2;
+				xPosD -= 2;
 			}
 
 			break;

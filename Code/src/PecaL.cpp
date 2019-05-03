@@ -256,7 +256,7 @@ bool PecaL::avaliaPotencialRotacao(int x, int y, int xAjuste, int yAjuste, int i
 		xPosE++;
 		xPosD++;
 	}
-	if (x >= iWidth) {
+	if (x + (xPosD - xPosE) >= iWidth) {
 		x--;
 		xPosE--;
 		xPosD--;
@@ -288,6 +288,7 @@ bool PecaL::avaliaColisao() {
 	// Dimensões e localização da peça da próxima rotação
 	int iPieceHeight_AvaliaRotacaoSeguinte;
 	int iPieceWidth_AvaliaRotacaoSeguinte;
+	int yPos_AvaliaRotacaoSeguinte;
 	int xPosE_AvaliaRotacaoSeguinte;
 
 	// Reset de variáveis
@@ -328,15 +329,15 @@ bool PecaL::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 3;
 			iPieceWidth_AvaliaRotacaoSeguinte = 2;
 			xPosE_AvaliaRotacaoSeguinte = xPosE + 1;
+			yPos_AvaliaRotacaoSeguinte = yPos - 1;
 
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacao(
-				xPosE_AvaliaRotacaoSeguinte, (yPos - 1), 0, 0,
+				xPosE_AvaliaRotacaoSeguinte, yPos_AvaliaRotacaoSeguinte, 0, 0,
 				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte, 
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 			);
@@ -367,15 +368,15 @@ bool PecaL::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 2;
 			iPieceWidth_AvaliaRotacaoSeguinte = 3;
 			xPosE_AvaliaRotacaoSeguinte = xPosE - 1;
+			yPos_AvaliaRotacaoSeguinte = yPos;
 
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacao(
-				xPosE_AvaliaRotacaoSeguinte, (yPos-1), 0, iPieceHeight_AvaliaRotacaoSeguinte - 1,
+				xPosE_AvaliaRotacaoSeguinte, yPos_AvaliaRotacaoSeguinte, 0, iPieceHeight_AvaliaRotacaoSeguinte - 1,
 				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte, 
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 				);
@@ -405,15 +406,15 @@ bool PecaL::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 3;
 			iPieceWidth_AvaliaRotacaoSeguinte = 2;
 			xPosE_AvaliaRotacaoSeguinte = xPosE;
+			yPos_AvaliaRotacaoSeguinte = yPos;
 
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacao(
-				xPosE_AvaliaRotacaoSeguinte, (yPos - 1), iPieceWidth_AvaliaRotacaoSeguinte - 1, iPieceHeight_AvaliaRotacaoSeguinte - 1,
+				xPosE_AvaliaRotacaoSeguinte, yPos_AvaliaRotacaoSeguinte, iPieceWidth_AvaliaRotacaoSeguinte - 1, iPieceHeight_AvaliaRotacaoSeguinte - 1,
 				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 			);
@@ -444,15 +445,15 @@ bool PecaL::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 2;
 			iPieceWidth_AvaliaRotacaoSeguinte = 3;
-			xPosE_AvaliaRotacaoSeguinte = xPosE - 1;
+			xPosE_AvaliaRotacaoSeguinte = xPosE;
+			yPos_AvaliaRotacaoSeguinte = yPos + 1;
 
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacao(
-				xPosE_AvaliaRotacaoSeguinte, yPos, iPieceWidth_AvaliaRotacaoSeguinte - 1, 0,
+				xPosE_AvaliaRotacaoSeguinte, yPos_AvaliaRotacaoSeguinte, iPieceWidth_AvaliaRotacaoSeguinte - 1, 0,
 				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 			);

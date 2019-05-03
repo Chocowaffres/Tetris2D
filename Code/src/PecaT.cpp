@@ -257,23 +257,13 @@ bool PecaT::atualizaMatriz() {
 
 bool PecaT::avaliaPotencialRotacao(int x, int y, int xAjuste, int yAjuste, int iPieceHeight, int xPosE, int xPosD) {
 
-	int ** gameGridTemp = (int**)calloc(iWidth, sizeof(int*));
-	for (int i = 0; i < iWidth; i++) {
-		gameGridTemp[i] = (int*)calloc(iHeight, sizeof(int));
-	}
-
-	for (int i = 0; i < iWidth; i++) {
-		for (int j = 0; j < iHeight; j++) {
-			gameGridTemp[i][j] = gameGrid[i][j];
-		}
-	}
 	// Acertos nas interações com limites laterais de janela de jogo
 	if (x < 0) {
 		x++;
 		xPosE++;
 		xPosD++;
 	}
-	if (x >= iWidth) {
+	if (x + (xPosD - xPosE) >= iWidth) {
 		x--;
 		xPosE--;
 		xPosD--;
@@ -286,28 +276,12 @@ bool PecaT::avaliaPotencialRotacao(int x, int y, int xAjuste, int yAjuste, int i
 			return false;
 		}
 		if (gameGrid[x + xAjuste][y + i] == 1) {
-			gameGridTemp[x + xAjuste][y + i] = 3;
-			for (int i = iHeight - 1; i >= 0; i--) {
-				for (int j = 0; j < iWidth; j++) {
-					cout << gameGridTemp[j][i] << ", ";
-				}
-				cout << endl;
-			}
-			cout << endl;
 			return false;
 		}
 	}
 	// Largura
 	for (int i = xPosE; i < xPosD; i++) {
 		if (gameGrid[i][y + yAjuste] == 1) {
-			gameGridTemp[i][y + yAjuste] = 2;
-			for (int i = iHeight - 1; i >= 0; i--) {
-				for (int j = 0; j < iWidth; j++) {
-					cout << gameGridTemp[j][i] << ", ";
-				}
-				cout << endl;
-			}
-			cout << endl;
 			return false;
 		}
 	}
@@ -361,16 +335,15 @@ bool PecaT::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 3;
 			iPieceWidth_AvaliaRotacaoSeguinte = 2;
-			xPosE_AvaliaRotacaoSeguinte = xPosE - 1;
+			xPosE_AvaliaRotacaoSeguinte = xPosE + 1;
 
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacao(
 				xPosE_AvaliaRotacaoSeguinte, (yPos - 1), 0, trunc(iPieceHeight_AvaliaRotacaoSeguinte / 2),
-				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
+				iPieceWidth_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 			);
 
@@ -400,8 +373,7 @@ bool PecaT::avaliaColisao() {
 						bCollisionRight = true;
 				}
 			}
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 2;
 			iPieceWidth_AvaliaRotacaoSeguinte = 3;
 			xPosE_AvaliaRotacaoSeguinte = xPosE - 1;
@@ -409,7 +381,7 @@ bool PecaT::avaliaColisao() {
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacao(
 				xPosE_AvaliaRotacaoSeguinte, yPos, trunc(iPieceWidth_AvaliaRotacaoSeguinte / 2), iPieceHeight_AvaliaRotacaoSeguinte - 1,
-				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
+				iPieceWidth_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 			);
 			break;
@@ -439,16 +411,15 @@ bool PecaT::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 3;
 			iPieceWidth_AvaliaRotacaoSeguinte = 2;
-			xPosE_AvaliaRotacaoSeguinte = xPosE - 1;
+			xPosE_AvaliaRotacaoSeguinte = xPosE;
 
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacao(
-				xPosE_AvaliaRotacaoSeguinte, yPos + 1, iPieceWidth_AvaliaRotacaoSeguinte - 1, trunc(iPieceHeight_AvaliaRotacaoSeguinte / 2),
-				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
+				xPosE_AvaliaRotacaoSeguinte, yPos, iPieceWidth_AvaliaRotacaoSeguinte - 1, trunc(iPieceHeight_AvaliaRotacaoSeguinte / 2),
+				iPieceWidth_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 			);
 			break;
@@ -477,16 +448,15 @@ bool PecaT::avaliaColisao() {
 				}
 			}
 
-			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
-			de atualizaPos */
+			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
 			iPieceHeight_AvaliaRotacaoSeguinte = 2;
 			iPieceWidth_AvaliaRotacaoSeguinte = 3;
 			xPosE_AvaliaRotacaoSeguinte = xPosE;
 
 			// Verificar rotação por recurso a função
 			bRotationAllowed = avaliaPotencialRotacao(
-				xPosE_AvaliaRotacaoSeguinte, yPos, trunc(iPieceWidth_AvaliaRotacaoSeguinte / 2), 0,
-				iPieceHeight_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
+				xPosE_AvaliaRotacaoSeguinte, yPos + 1, trunc(iPieceWidth_AvaliaRotacaoSeguinte / 2), 0,
+				iPieceWidth_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
 				(xPosE_AvaliaRotacaoSeguinte + iPieceWidth_AvaliaRotacaoSeguinte)
 			);
 			break;
@@ -566,6 +536,7 @@ void PecaT::atualizaPos() {
 
 			// Ajuste de posições
 			xPosD = xPosE + iPieceWidth;
+
 			yPos--;
 
 			// Caso em que é necessário garantir que peça não desce para fora da janela de visualização
