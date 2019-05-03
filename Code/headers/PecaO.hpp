@@ -41,6 +41,14 @@ class PecaO : public Peca
 		int iNumberTranslation;
 		int iNumberDown;
 
+		// Variáveis associadas a temporizador de colisão, visando melhor jogabilidade
+		int oldValueTime;
+		bool bCollisionBottom;
+		bool bCollisionLeft;
+		bool bCollisionRight;
+		bool bRotationAllowed;
+		int acertoPosicaoY;
+
 		std::chrono::time_point<std::chrono::steady_clock> t_start;
 
 	public:
@@ -68,6 +76,11 @@ class PecaO : public Peca
 		int getXPosD();
 		int getXPosE();
 
+		bool hasCollidedBottom();
+		bool hasCollidedLeft();
+		bool hasCollidedRight();
+		bool rotationAllowed();
+
 		// Atualizadores
 		void incNumberRotate();
 		void incNumberTranslation();
@@ -82,7 +95,7 @@ class PecaO : public Peca
 		static std::vector<GLfloat> g_vertex_buffer_data;
 
 		// Cor da peça
-		static std::vector<GLfloat> g_color_buffer_data;
+		static std::vector<GLfloat> g_texture_buffer_data;
 
 		static std::vector<GLfloat> g_real_vertex_buffer;
 };

@@ -38,7 +38,11 @@ class Peca
 
 	virtual int getXPosD() = 0;
 	virtual int getXPosE() = 0;
-	//virtual int getYPos() = 0;
+
+	virtual bool hasCollidedBottom() = 0;
+	virtual bool hasCollidedLeft() = 0;
+	virtual bool hasCollidedRight() = 0;
+	virtual bool rotationAllowed() = 0;
 
 	// Atualizadores
 	virtual void incNumberRotate() = 0;
@@ -54,7 +58,7 @@ class Peca
 	static std::vector<GLfloat> g_vertex_buffer_data;
 
 	// Cor da peça
-	static std::vector<GLfloat> g_color_buffer_data;
+	static std::vector<GLfloat> g_texture_buffer_data;
 
 	static std::vector<GLfloat> g_real_vertex_buffer;
 
