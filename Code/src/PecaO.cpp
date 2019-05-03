@@ -46,6 +46,14 @@ PecaO::PecaO(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** ga
 
 	t_start = std::chrono::high_resolution_clock::now();
 
+	// Variáveis associadas a temporizador de colisão, visando melhor jogabilidade
+	oldValueTime = 0;
+	bCollisionBottom = false;
+	bCollisionLeft = false;
+	bCollisionRight = false;
+	bRotationAllowed = true;
+	acertoPosicaoY = 0;
+
 	g_real_vertex_buffer = {};
 };
 
@@ -89,43 +97,43 @@ std::vector<GLfloat> PecaO::g_vertex_buffer_data = {
 		2.0f,  2.0f,  0.0f,
 };
 
-// Cor da peça
-std::vector<GLfloat> PecaO::g_color_buffer_data = {
+// Textura da peça
+std::vector<GLfloat> PecaO::g_texture_buffer_data = {
 		//O
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
+		0.0f,  0.25f,
+		0.0f,  0.5f,
+		0.25f,  0.25f,
 
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
+		0.0f,  0.5f,
+		0.25f,  0.25f,
+		0.25f,  0.5f,
 
 		//
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
+		0.0f,  0.25f,
+		0.0f,  0.5f,
+		0.25f,  0.25f,
 
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		
+		0.0f,  0.5f,
+		0.25f,  0.25f,
+		0.25f,  0.5f,
+
 		//
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
+		0.0f,  0.25f,
+		0.0f,  0.5f,
+		0.25f,  0.25f,
 
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		
+		0.0f,  0.5f,
+		0.25f,  0.25f,
+		0.25f,  0.5f,
+
 		//
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
+		0.0f,  0.25f,
+		0.0f,  0.5f,
+		0.25f,  0.25f,
 
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
-		1.0f,  1.0f,  0.0f,
+		0.0f,  0.5f,
+		0.25f,  0.25f,
+		0.25f,  0.5f,
 };
 
 std::vector<GLfloat> PecaO::g_real_vertex_buffer = {};
@@ -196,13 +204,41 @@ bool PecaO::atualizaMatriz() {
 }
 
 bool PecaO::avaliaColisao() {
+	// Reset de variáveis
+	bCollisionBottom = false;
+	bCollisionLeft = false;
+	bCollisionRight = false;
+	bRotationAllowed = true;
+
 	// Colisão com base de jogo
 	if (yPos == 0) {
-		return true;
+		bCollisionBottom = true;
 	}
 
-	// Colisão com outras peças
-	if ((gameGrid[xPosE][yPos - 1] == 1) || (gameGrid[xPosE + 1][yPos - 1] == 1 || (gameGrid[xPosE][yPos] == 1))){
+	/* Colisão com outras peças
+	Diferentes variáveis são atualizadas, mediante o ponto de colisão, avaliadas em registerUserInputs, em main.cpp */
+	if ((gameGrid[xPosE][yPos - 1] == 1) || 
+		(gameGrid[xPosE + 1][yPos - 1] == 1)){
+			bCollisionBottom = true;
+	}
+	if (xPosE - 1 >= 0) {
+		if ((gameGrid[xPosE - 1][yPos] == 1) || 
+			(gameGrid[xPosE - 1][yPos + 1] == 1)) {
+				bCollisionLeft = true;
+		}
+	}
+	if (xPosE + 2 < iWidth) {
+		if ((gameGrid[xPosE + 2][yPos] == 1) || 
+			(gameGrid[xPosE + 2][yPos + 1] == 1)) {
+				bCollisionRight = true;
+		}
+	}
+
+	// Variável bRotationAllowed não precisa de ser negada pois esta peça não varia mediante rotação
+
+	/* Apena agora será retornado o valor de colisão para garantir que as restantes variáveis (bCollisionLeft e bCollisionRight)
+	são atualizadas de acordo com a situação de colisão */
+	if (bCollisionBottom) {
 		return true;
 	}
 
@@ -232,9 +268,14 @@ void PecaO::translacaoPeca(glm::mat4& trans) {
 	// <int> -> Forçar a que a variação de tempo considerada seja a cada segundo
 	int time = std::chrono::duration_cast<std::chrono::duration<int>>(t_now - t_start).count();
 
+	/* Se houve colisão, não reajustar variável associada a tempo, para garantir que peça se mantém
+	posição onde estava no momento de colisão. "time" influencia a descida da peça, daí ter esta avaliação */
+	if (bCollisionBottom) {
+		time = oldValueTime;
+	}
+
 	// Peça desce pelo ecrã, a cada segundo
-	yPos = yPosInicial - time - iNumberDown * .5;
-	//cout << "yPos: " << yPos << ", yPosAjuste: " << yPosAjuste << endl;
+	yPos = yPosInicial - time - iNumberDown * .5 + acertoPosicaoY;
 
 	// Trata das translações para esquerda e direita ("+" -> direita, "-" -> esquerda)
 	xPosE = xPosInicial + iNumberTranslation;
@@ -244,6 +285,11 @@ void PecaO::translacaoPeca(glm::mat4& trans) {
 	/* Atualiza posições para avaliação de colisões, preenchimento de matriz e proxima iteração de draw
 	 (no caso de alteração relativamente a iNumberTranslation) */
 	atualizaPos();
+
+	// Caso não tenha havido colisão, atualizar variável de tempo anterior.
+	if (!bCollisionBottom) {
+		oldValueTime = time;
+	}
 }
 
 void PecaO::drawObject() {
@@ -273,6 +319,22 @@ int PecaO::getXPosD() {
 
 int PecaO::getXPosE() {
 	return xPosE;
+}
+
+bool PecaO::hasCollidedBottom() {
+	return bCollisionBottom;
+}
+
+bool PecaO::hasCollidedLeft() {
+	return bCollisionLeft;
+}
+
+bool PecaO::hasCollidedRight() {
+	return bCollisionRight;
+}
+
+bool PecaO::rotationAllowed() {
+	return bRotationAllowed;
 }
 
 // Atualizadores

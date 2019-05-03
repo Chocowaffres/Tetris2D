@@ -40,6 +40,14 @@ PecaS::PecaS(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** ga
 
 	t_start = std::chrono::high_resolution_clock::now();
 
+	// Variáveis associadas a temporizador de colisão, visando melhor jogabilidade
+	oldValueTime = 0;
+	bCollisionBottom = false;
+	bCollisionLeft = false;
+	bCollisionRight = false;
+	bRotationAllowed = true;
+	acertoPosicaoY = 0;
+
 	g_real_vertex_buffer = {};
 };
 
@@ -83,43 +91,43 @@ std::vector<GLfloat> PecaS::g_vertex_buffer_data = {
 		3.0f,  2.0f,  0.0f,
 };
 
-// Cor da peça
-std::vector<GLfloat> PecaS::g_color_buffer_data = {
+// Textura da peça
+std::vector<GLfloat> PecaS::g_texture_buffer_data = {
 		//S
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
+		0.0f,  0.5f,
+		0.0f,  0.75f,
+		0.25f,  0.5f,
 
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
+		0.0f,  0.75f,
+		0.25f,  0.5f,
+		0.25f,  0.75f,
 
 		//
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
+		0.0f,  0.5f,
+		0.0f,  0.75f,
+		0.25f,  0.5f,
 
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		
+		0.0f,  0.75f,
+		0.25f,  0.5f,
+		0.25f,  0.75f,
+
 		//
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
+		0.0f,  0.5f,
+		0.0f,  0.75f,
+		0.25f,  0.5f,
 
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		
+		0.0f,  0.75f,
+		0.25f,  0.5f,
+		0.25f,  0.75f,
+
 		//
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
+		0.0f,  0.5f,
+		0.0f,  0.75f,
+		0.25f,  0.5f,
 
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
-		0.0f,  1.0f,  0.0f,
+		0.0f,  0.75f,
+		0.25f,  0.5f,
+		0.25f,  0.75f,
 };
 
 std::vector<GLfloat> PecaS::g_real_vertex_buffer = {};
@@ -281,36 +289,206 @@ bool PecaS::atualizaMatriz() {
 	}
 }
 
-bool PecaS::avaliaColisao() {
-	// Colisão com base de jogo
-	if (yPos == 0) {
-		return true;
+bool PecaS::avaliaPotencialRotacaoCaso0e2(int x, int y, int iPieceWidth) {
+
+	// Andar de baixo
+	for (int i = 0; i < iPieceWidth - 1; i++) {
+		if (gameGrid[x + i][y] == 1) {
+			return false;
+		}
 	}
 
-	// Colisão com outras peças, tendo em consideração a rotação da peça
-	switch (iNumberRotate % 4) {
-		case 0:
-			if ((gameGrid[xPosE][yPos - 1] == 1) || (gameGrid[xPosE + 1][yPos - 1] == 1) || (gameGrid[xPosE + 2][yPos] == 1)){
-				return true;
-			}
-			break;
-		case 1:
-			if ((gameGrid[xPosE][yPos] == 1) || (gameGrid[xPosE + 1][yPos - 1] == 1)){
-				return true;
-			}
-			break;
-		case 2:
-			if ((gameGrid[xPosE][yPos - 1] == 1) || (gameGrid[xPosE + 1][yPos - 1] == 1) || (gameGrid[xPosE + 2][yPos] == 1)){
-				return true;
-			}
-			break;
-		case 3:
-			if ((gameGrid[xPosE][yPos] == 1) || (gameGrid[xPosE + 1][yPos - 1] == 1)){
-				return true;
-			}
-			break;
+	// Andar de cima
+
+	// Atualização de y
+	y = y + 1;
+
+	// Jogo acabou
+	if (y > iHeight) {
+		return false;
+	}
+
+	// Atualização de x
+	x = x + 1;
+
+	// Acertos nas interações com limites laterais de janela de jogo
+	/*if (x >= iWidth) {
+		x--;
+	}
+	*/
+	for (int i = 0; i < iPieceWidth - 1; i++) {
+		if (gameGrid[x + i][y] == 1) {
+			return false;
+		}
 	}
 	
+	// É possivel fazer a rotação
+	return true;
+}
+
+bool PecaS::avaliaPotencialRotacaoCaso1e3(int x, int y, int iPieceHeight) {
+
+	// Lado esquerdo
+	y = y + 1;
+
+	// Jogo acabou
+	if (y > iHeight) {
+		return false;
+	}
+	for (int i = 0; i < iPieceHeight - 1; i++) {
+		// Jogo acabou
+		if (y > iHeight) {
+			return false;
+		}
+		if (gameGrid[x][y + i] == 1) {
+			return false;
+		}
+	}
+
+	// Lado direito
+
+	// Atualização de y
+	y = y - 1;
+	// Atualização de x
+	x = x + 1;
+
+	// Acertos nas interações com limites laterais de janela de jogo
+	if (x >= iWidth) {
+		x--;
+	}
+
+
+	for (int i = 0; i < iPieceHeight - 1; i++) {
+		if (gameGrid[x][y + i] == 1) {
+			return false;
+		}
+	}
+
+	// É possivel fazer a rotação
+	return true;
+}
+
+
+bool PecaS::avaliaColisao() {
+
+	// Dimensões e localização da peça da próxima rotação
+	int iVariavelCiclo_AvaliaRotacaoSeguinte;
+	int yPos_AvaliaRotacaoSeguinte;
+	int xPosE_AvaliaRotacaoSeguinte;
+
+	// Reset de variáveis
+	bCollisionBottom = false;
+	bCollisionLeft = false;
+	bCollisionRight = false;
+	bRotationAllowed = true;
+
+	// Colisão com bordas da janela de visualização
+	if (xPosE == 0) {
+		bCollisionLeft = true;
+	}
+	if (xPosD == iWidth - 1) {
+		bCollisionRight = true;
+	}
+
+	// Colisão com base de jogo
+	if (yPos == 0) {
+		bCollisionBottom = true;
+	}
+
+	/* Colisão com outras peças, tendo em consideração a rotação da peça
+	Diferentes variáveis são atualizadas, mediante o ponto de colisão, avaliadas em registerUserInputs, em main.cpp */
+	switch (iNumberRotate % 4) {
+		case 0:
+		case 2:
+			// Bottom collision
+			if ((gameGrid[xPosE][yPos - 1] == 1) ||
+				(gameGrid[xPosE + 1][yPos - 1] == 1) ||
+				(gameGrid[xPosE + 2][yPos] == 1)){
+					bCollisionBottom = true;
+			}
+
+			// Left collision
+			if (xPosE - 1 >= 0) {
+				if ((gameGrid[xPosE - 1][yPos] == 1) ||
+					(gameGrid[xPosE][yPos + 1] == 1)) {
+						bCollisionLeft = true;
+				}
+			}
+
+			// Right collision
+			if (xPosE + 3 < iWidth) {
+				if ((gameGrid[xPosE + 2][yPos] == 1) || 
+					(gameGrid[xPosE + 3][yPos + 1] == 1)) {
+						bCollisionRight = true;
+				}
+			}
+
+			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
+			de atualizaPos */
+			iVariavelCiclo_AvaliaRotacaoSeguinte = 3;
+			yPos_AvaliaRotacaoSeguinte = yPos - 1; // Igual em case 1 e 3
+			xPosE_AvaliaRotacaoSeguinte =
+				(iNumberRotate % 4 == 0) ?
+				xPosE + 1 : // Case 1
+				xPosE // Case 3
+				;
+
+			// Verificar rotação por recurso a função
+			bRotationAllowed = avaliaPotencialRotacaoCaso1e3(
+				xPosE_AvaliaRotacaoSeguinte, yPos_AvaliaRotacaoSeguinte, iVariavelCiclo_AvaliaRotacaoSeguinte
+			);
+
+			break;
+		case 1:
+		case 3:
+			// Bottom collision
+			if ((gameGrid[xPosE][yPos] == 1) ||
+				(gameGrid[xPosE + 1][yPos - 1] == 1)){
+					bCollisionBottom = true;
+			}
+
+
+			// Left collision
+			if (xPosE - 1 >= 0) {
+				if ((gameGrid[xPosE][yPos] == 1) ||
+					(gameGrid[xPosE - 1][yPos + 1] == 1) || 
+					(gameGrid[xPosE - 1][yPos + 2] == 1)) {
+						bCollisionLeft = true;
+				}
+			}
+
+			// Right collision
+			if (xPosE + 2 < iWidth) {
+				if ((gameGrid[xPosE + 1][yPos + 2] == 1) ||
+					(gameGrid[xPosE + 2][yPos] == 1) ||
+					(gameGrid[xPosE + 2][yPos + 1] == 1)) {
+						bCollisionRight = true;
+				}
+			}
+
+			/* Calculando parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes
+			de atualizaPos */
+			iVariavelCiclo_AvaliaRotacaoSeguinte = 3;
+			yPos_AvaliaRotacaoSeguinte =
+				(iNumberRotate % 4 == 1) ?
+				yPos - 1 : // Case 2
+				yPos // Case 0
+				;
+			xPosE_AvaliaRotacaoSeguinte = xPosE;  // Igual em case 0 e 2
+
+			// Verificar rotação por recurso a função
+			bRotationAllowed = avaliaPotencialRotacaoCaso0e2(
+				xPosE_AvaliaRotacaoSeguinte, yPos_AvaliaRotacaoSeguinte, iVariavelCiclo_AvaliaRotacaoSeguinte
+			);
+
+			break;
+	}
+
+	/* Apena agora será retornado o valor de colisão para garantir que as restantes variáveis (bCollisionLeft e bCollisionRight)
+	são atualizadas de acordo com a situação de colisão */
+	if (bCollisionBottom) {
+		return true;
+	}
 	return false;
 }
 
@@ -331,7 +509,7 @@ void PecaS::atualizaPos() {
 				xPosE++;
 				xPosD++;
 			}
-			if (xPosD > iWidth) {
+			if (xPosD >= iWidth) {
 				// Garantir que peça se mantém dentro da janela de visualização 
 				iNumberTranslation--;
 				// Reajustar posição da peça resultante de ajuste
@@ -349,6 +527,12 @@ void PecaS::atualizaPos() {
 			xPosE++; // Peça avança relativamente à posição standart da peça
 			xPosD = xPosE + iPieceWidth;
 			yPos--;
+
+			// Caso em que é necessário garantir que peça não desce para fora da janela de visualização
+			if (yPos <= 0) {
+				// Garantir que peça se mantém dentro da janela de visualização 
+				acertoPosicaoY += -yPos;
+			}
 		
 			break;
 		case 2:
@@ -385,6 +569,12 @@ void PecaS::atualizaPos() {
 				xPosE++;
 				xPosD++;
 			}
+
+			// Caso em que é necessário garantir que peça não desce para fora da janela de visualização
+			if (yPos <= 0) {
+				// Garantir que peça se mantém dentro da janela de visualização 
+				acertoPosicaoY += -yPos;
+			}
 			break;
 		}
 }
@@ -404,8 +594,14 @@ void PecaS::translacaoPeca(glm::mat4& trans) {
 	// <int> -> Forçar a que a variação de tempo considerada seja a cada segundo
 	int time = std::chrono::duration_cast<std::chrono::duration<int>>(t_now - t_start).count();
 
+	/* Se houve colisão, não reajustar variável associada a tempo, para garantir que peça se mantém
+	posição onde estava no momento de colisão. "time" influencia a descida da peça, daí ter esta avaliação */
+	if (bCollisionBottom) {
+		time = oldValueTime;
+	}
+
 	// Peça desce pelo ecrã, a cada segundo
-	yPos = yPosInicial - time - iNumberDown * .5;
+	yPos = yPosInicial - time - iNumberDown * .5 + acertoPosicaoY;
 
 	// Trata das translações para esquerda e direita ("+" -> direita, "-" -> esquerda)
 	xPosE = xPosInicial + iNumberTranslation;
@@ -415,6 +611,11 @@ void PecaS::translacaoPeca(glm::mat4& trans) {
 	/* Atualiza posições para avaliação de colisões, preenchimento de matriz e proxima iteração de draw
 	 (no caso de alteração relativamente a iNumberTranslation) */
 	atualizaPos();
+
+	// Caso não tenha havido colisão, atualizar variável de tempo anterior.
+	if (!bCollisionBottom) {
+		oldValueTime = time;
+	}
 }
 
 void PecaS::drawObject() {
@@ -444,6 +645,22 @@ int PecaS::getXPosD() {
 
 int PecaS::getXPosE() {
 	return xPosE;
+}
+
+bool PecaS::hasCollidedBottom() {
+	return bCollisionBottom;
+}
+
+bool PecaS::hasCollidedLeft() {
+	return bCollisionLeft;
+}
+
+bool PecaS::hasCollidedRight() {
+	return bCollisionRight;
+}
+
+bool PecaS::rotationAllowed() {
+	return bRotationAllowed;
 }
 
 // Atualizadores

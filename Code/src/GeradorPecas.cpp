@@ -5,7 +5,7 @@
 GeradorPecas::GeradorPecas() {};
 
 GeradorPecas::GeradorPecas(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** gameGrid) :
-	pecaZ(xPosInicial,yPosInicial,iHeight, iWidth, gameGrid), 
+	pecaZ(xPosInicial,yPosInicial,iHeight, iWidth, gameGrid),
 	pecaT(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid),
 	pecaJ(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid),
 	pecaS(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid),
