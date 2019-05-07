@@ -27,23 +27,21 @@ class GeradorPecas {
 		int iHeight;
 		int iWidth;
 		int** gameGrid;
+		int iGameLevel;
 
-		int iRandPiece;
+		int iGamePiece;
 	public:
 		GeradorPecas();
-		GeradorPecas(int,int,int,int,int**);
+		GeradorPecas(int,int,int,int,int**, int);
 
 		// Criar pecas
-		void criaPecaZ(int**);
-		void criaPecaT(int**);
-		void criaPecaJ(int**);
-		void criaPecaS(int**);
-		void criaPecaO(int**);
-		void criaPecaL(int**);
-		void criaPecaI(int**);
-
-		// Setter
-		void setGameGrid(int**);
+		void criaPecaZ(int**, int);
+		void criaPecaT(int**, int);
+		void criaPecaJ(int**, int);
+		void criaPecaS(int**, int);
+		void criaPecaO(int**, int);
+		void criaPecaL(int**, int);
+		void criaPecaI(int**, int);
 
 		// Getters
 		Peca& getPecaZ();

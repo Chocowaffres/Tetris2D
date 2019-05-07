@@ -26,8 +26,14 @@ class Peca
 	virtual bool atualizaMatriz() = 0;
 	virtual bool avaliaColisao() = 0;
 	virtual void atualizaPos() = 0;
+
 	virtual void rotacaoPeca(glm::mat4& rot) = 0;
 	virtual void translacaoPeca(glm::mat4& trans) = 0;
+	virtual void translacaoPecaContorno(glm::mat4& trans) = 0;
+
+	virtual int dropAccordingToLevel(double) = 0;
+
+	virtual int collisionYPos() = 0;
 
 	// Getters
 	virtual int** getGameGrid() = 0;

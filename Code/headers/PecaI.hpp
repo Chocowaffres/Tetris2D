@@ -51,11 +51,13 @@ class PecaI : public Peca
 		bool bRotationAllowed;
 		int acertoPosicaoY;
 
+		int gameLevel;
+
 		std::chrono::time_point<std::chrono::steady_clock> t_start;
 
 	public:
 		PecaI();
-		PecaI(int, int, int, int, int**);
+		PecaI(int, int, int, int, int**, int);
 
 		void preencheRealVertex(GLfloat, GLfloat);
 		void modificaQuadricula(GLfloat, GLfloat);
@@ -66,8 +68,15 @@ class PecaI : public Peca
 		bool avaliaPotencialRotacao(int, int, int, int, int);
 		bool avaliaColisao();
 		void atualizaPos();
+
 		void rotacaoPeca(glm::mat4& rot);
 		void translacaoPeca(glm::mat4& trans);
+
+		int collisionYPos();
+		void translacaoPecaContorno(glm::mat4& trans);
+
+		// Atualizar queda de peça de acordo com nível de jogo
+		int dropAccordingToLevel(double);
 
 		// Getters
 		int** getGameGrid();
@@ -101,4 +110,10 @@ class PecaI : public Peca
 		static std::vector<GLfloat> g_texture_buffer_data;
 
 		static std::vector<GLfloat> g_real_vertex_buffer;
+
+		// Desenho da peça
+		static std::vector<GLfloat> g_vertex_buffer_dataPos;
+
+		// Textura da posição de colisão da peça
+		static std::vector<GLfloat> g_texture_buffer_dataPos;
 };
