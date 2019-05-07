@@ -9,6 +9,7 @@
 #include "headers/GeradorPecas.hpp" 
 
 // Include standard headers
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
@@ -39,27 +40,35 @@ using namespace glm;
 GLuint VertexArrayID;
 
 // Texture array object (TAO)
-GLuint TextureID;
+GLuint TextureID[3];
 
 // Vertex buffer object (VBO)
 GLuint vertexbuffer;
 GLuint vertexbufferTot;
 GLuint vertexbufferNextPiece;
+GLuint vertexbufferSavedPiece;
+GLuint vertexbufferBackground;
+GLuint vertexbufferPosPiece;
+GLuint vertexbufferGrid;
 
-// color buffer object (CBO)
+// Texture buffer object (TBO)
 GLuint texturebuffer;
 GLuint texturebufferTot;
 GLuint texturebufferNextPiece;
+GLuint texturebufferSavedPiece;
+GLuint texturebufferBackground;
+GLuint texturebufferPosPiece;
+GLuint texturebufferGrid;
 
 // GLSL program from the shaders
 GLuint programID;
 
-int const iWidth = 11;
-int const iHeight = 16;
-GLfloat WIDTH_PosXInicial = 11.f;
-GLfloat HEIGHT_PosYInicial = 16.f;
-GLfloat WIDTH = 15.f; // 15. 0 f
-GLfloat HEIGHT = 16.f;
+int const iWidth = 10;
+int const iHeight = 20;
+GLfloat WIDTH_PosXInicial = 10.f;
+GLfloat HEIGHT_PosYInicial = 20.f;
+GLfloat WIDTH = 14.f; // 15. 0 f
+GLfloat HEIGHT = 20.f;
 GLint WindowHeight = 600;
 GLint WindowWidth = WIDTH / HEIGHT * WindowHeight;
 
@@ -67,6 +76,8 @@ char vertexShader[] = "shaders/vertexShader.vertexshader";
 char fragmentShader[] = "shaders/fragmentShader.fragmentshader";
 char WindowTitle[] = "Tetris";
 const char* caTiles = "resources/tiles_large.png";
+const char* caBackground = "resources/background.png";
+const char* caGamegrid = "resources/gamegrid.png";
 
 // Timer
 std::chrono::time_point<std::chrono::steady_clock> t_start;
@@ -78,17 +89,29 @@ bool bCollisionPiece = false;
 
 int** gameGrid;
 // Posição inicial da peça, no topo e ao centro
-int xPosInicial = (int)WIDTH_PosXInicial / 2, yPosInicial = HEIGHT_PosYInicial;
+int xPosInicial = (int)WIDTH_PosXInicial / 2 - 1, yPosInicial = HEIGHT_PosYInicial;
 
+// Variáveis de jogo
 GeradorPecas geraPecas;
-int iRandPiece;
-int iRandPieceNextPiece;
+int iGamePiece;
+int iGameNextPiece;
+int iSavedPiece = 0;
+bool bAlteraPecaEmJogo = false;
+bool bDropPeca = false;
 
 // Variáveis de textura
 int iTexWidth;
 int iTexHeight;
 int iTexNumChannels;
 unsigned char* ucaTexData;
+
+// Pontuação
+int iPontuacao = 0;
+int iNivelJogo = 0;
+int iTotalLinhasEliminadasEmNível = 0;
+
+unsigned int globalBack;
+unsigned int globalTile;
 
 // Vértices da peça atual
 std::vector<GLfloat> g_vertex_buffer_data = {};
@@ -101,6 +124,50 @@ std::vector<GLfloat> g_vertex_buffer_dataTot = {};
 
 // Texturas de todas as peças
 std::vector<GLfloat> g_texture_buffer_dataTot = {};
+
+// Vértices de background
+std::vector<GLfloat> g_vertex_buffer_dataBack = {
+	0.0f,  0.0f,   0.1f,
+	14.0f, 0.0f,   0.1f,
+	0.0f,  20.0f,  0.1f,
+
+	14.0f, 0.0f,   0.1f,
+	0.0f,  20.0f,  0.1f,
+	14.0f, 20.0f,  0.1f,
+};
+
+// Textura de background
+std::vector<GLfloat> g_texture_buffer_dataBack = {
+	0.0f,  1.0f,
+	1.0f,  1.0f,
+	0.0f,  0.0f,
+
+	1.0f,  1.0f,
+	0.0f,  0.0f,
+	1.0f,  0.0f,
+};
+
+// Vértices da grelha de jogo
+std::vector<GLfloat> g_vertex_buffer_dataGrid = {
+	0.0f,  0.0f,   0.1f,
+	10.0f, 0.0f,   0.1f,
+	0.0f,  20.0f,  0.1f,
+
+	10.0f, 0.0f,   0.1f,
+	0.0f,  20.0f,  0.1f,
+	10.0f, 20.0f,  0.1f,
+};
+
+// Textura da grelha de jogo
+std::vector<GLfloat> g_texture_buffer_dataGrid = {
+	0.0f,  1.0f,
+	1.0f,  1.0f,
+	0.0f,  0.0f,
+
+	1.0f,  1.0f,
+	0.0f,  0.0f,
+	1.0f,  0.0f,
+};
 
 // Identificador de matriz MVP nos shaders
 GLuint MVP;
@@ -130,36 +197,78 @@ int randNum() {
 
 //--------------------------------------------------------------------------------
 
+int pontosPorLinhasEliminadas (int iNumbLinhasEliminadas) {
+	int iTotal = 0;
+	switch (iNumbLinhasEliminadas) {
+		case 1: iTotal = 40 * (iNivelJogo + 1); break;
+		case 2: iTotal = 100 * (iNivelJogo + 1); break;
+		case 3: iTotal = 300 * (iNivelJogo + 1); break;
+		case 4: iTotal = 1200 * (iNivelJogo + 1); break;
+	}
+	return iTotal;
+}
+
+void atualizaNivelJogo() {
+	if (iNivelJogo < 10) {
+		if (iTotalLinhasEliminadasEmNível >= (10 * (iNivelJogo + 1))) {
+			iNivelJogo++;
+			iTotalLinhasEliminadasEmNível = 0;
+		}
+	}
+	else if (iNivelJogo < 16) {
+		if (iTotalLinhasEliminadasEmNível >= 100) {
+			iNivelJogo++;
+			iTotalLinhasEliminadasEmNível = 0;
+		}
+	}
+	else if (iNivelJogo < 26) {
+		if (iTotalLinhasEliminadasEmNível >= (10 * (iNivelJogo - 5))) {
+			iNivelJogo++;
+			iTotalLinhasEliminadasEmNível = 0;
+		}
+	}
+	else {
+		if (iTotalLinhasEliminadasEmNível >= 200) {
+			if (iNivelJogo < 29) {
+				iNivelJogo++;
+				iTotalLinhasEliminadasEmNível = 0;
+			}
+		}
+	}
+}
+	
+//--------------------------------------------------------------------------------
+
 Peca* returnPeca(GeradorPecas& geraPecas, int switchValue) {
 	Peca* pecaGenerica;
 	switch (switchValue) {
 		case 1:
+			geraPecas.criaPecaZ(gameGrid, iNivelJogo);
 			pecaGenerica = &(geraPecas.getPecaZ());
-			geraPecas.criaPecaZ(gameGrid);
 			return pecaGenerica;
 		case 2:
+			geraPecas.criaPecaT(gameGrid, iNivelJogo);
 			pecaGenerica = &(geraPecas.getPecaT());
-			geraPecas.criaPecaT(gameGrid);
 			return pecaGenerica;
 		case 3:
+			geraPecas.criaPecaJ(gameGrid, iNivelJogo);
 			pecaGenerica = &(geraPecas.getPecaJ());
-			geraPecas.criaPecaJ(gameGrid);
 			return pecaGenerica;
 		case 4:
+			geraPecas.criaPecaS(gameGrid, iNivelJogo);
 			pecaGenerica = &(geraPecas.getPecaS());
-			geraPecas.criaPecaS(gameGrid);
 			return pecaGenerica;
 		case 5:
+			geraPecas.criaPecaO(gameGrid, iNivelJogo);
 			pecaGenerica = &(geraPecas.getPecaO());
-			geraPecas.criaPecaO(gameGrid);
 			return pecaGenerica;
 		case 6:
+			geraPecas.criaPecaL(gameGrid, iNivelJogo);
 			pecaGenerica = &(geraPecas.getPecaL());
-			geraPecas.criaPecaL(gameGrid);
 			return pecaGenerica;
 		case 7:
+			geraPecas.criaPecaI(gameGrid, iNivelJogo);
 			pecaGenerica = &(geraPecas.getPecaI());
-			geraPecas.criaPecaI(gameGrid);
 			return pecaGenerica;
 	}
 }
@@ -188,9 +297,8 @@ std::vector<GLfloat> textureBufferPiece(Peca& pPeca, int switchValue) {
 	}
 }
 
-
 std::vector<GLfloat>* realVertexBufferPiece(Peca& pPeca) {
-	switch (iRandPiece) {
+	switch (iGamePiece) {
 	case 1: return &dynamic_cast<PecaZ&>(pPeca).g_real_vertex_buffer;
 	case 2: return &dynamic_cast<PecaT&>(pPeca).g_real_vertex_buffer;
 	case 3: return &dynamic_cast<PecaJ&>(pPeca).g_real_vertex_buffer;
@@ -201,18 +309,44 @@ std::vector<GLfloat>* realVertexBufferPiece(Peca& pPeca) {
 	}
 }
 
+std::vector<GLfloat> textureBufferPosPiece(Peca& pPeca, int switchValue) {
+	switch (switchValue) {
+	case 1: return dynamic_cast<PecaZ&>(pPeca).g_texture_buffer_dataPos;
+	case 2: return dynamic_cast<PecaT&>(pPeca).g_texture_buffer_dataPos;
+	case 3: return dynamic_cast<PecaJ&>(pPeca).g_texture_buffer_dataPos;
+	case 4: return dynamic_cast<PecaS&>(pPeca).g_texture_buffer_dataPos;
+	case 5: return dynamic_cast<PecaO&>(pPeca).g_texture_buffer_dataPos;
+	case 6: return dynamic_cast<PecaL&>(pPeca).g_texture_buffer_dataPos;
+	case 7: return dynamic_cast<PecaI&>(pPeca).g_texture_buffer_dataPos;
+	}
+}
+
 //--------------------------------------------------------------------------------
 
-void transferDataToGPUMemory(Peca& pPeca, Peca& pNextPeca)
+void transferDataToGPUMemory(Peca& pPeca, Peca& pNextPeca, Peca& pSavedPeca)
 {
 
 	// Recolha de informação de vertices e cor da peça atual
-	g_vertex_buffer_data = vertexBufferPiece(pPeca, iRandPiece);
-	g_texture_buffer_data = textureBufferPiece(pPeca, iRandPiece);
+	g_vertex_buffer_data = vertexBufferPiece(pPeca, iGamePiece);
+	g_texture_buffer_data = textureBufferPiece(pPeca, iGamePiece);
 
 	// Recolha de informação de vertices e cor da próxima peça peça
-	std::vector<GLfloat> g_vertex_buffer_data_next_piece = vertexBufferPiece(pNextPeca, iRandPieceNextPiece);
-	std::vector<GLfloat> g_texture_buffer_data_next_piece = textureBufferPiece(pNextPeca, iRandPieceNextPiece);
+	std::vector<GLfloat> g_vertex_buffer_data_next_piece = vertexBufferPiece(pNextPeca, iGameNextPiece);
+	std::vector<GLfloat> g_texture_buffer_data_next_piece = textureBufferPiece(pNextPeca, iGameNextPiece);
+
+	// Recolha de informação de vertices e cor da peça guardada por user (clique em "C")
+	std::vector<GLfloat> g_vertex_buffer_data_saved_piece = vertexBufferPiece(pSavedPeca, iSavedPiece);
+	std::vector<GLfloat> g_texture_buffer_data_saved_piece = textureBufferPiece(pSavedPeca, iSavedPiece);
+
+	// Distinguir enter a primeira vez que se guarda peça (não havida nenhuma antes) e as restantes vezes
+	if (iSavedPiece == 0) {
+		std::vector<GLfloat> g_vertex_buffer_data_saved_piece = {};
+		std::vector<GLfloat> g_texture_buffer_data_saved_piece = {};
+	}
+
+	// Recolha de informação de vertices e cor da poisção da peça aquando da colisão
+	std::vector<GLfloat> g_vertex_buffer_data_pos_piece = vertexBufferPiece(pPeca, iGamePiece);
+	std::vector<GLfloat> g_texture_buffer_data_pos_piece = textureBufferPosPiece(pPeca, iGamePiece);
 
 	// Move vertex data to video memory; specifically to VBO called vertexbuffer,
 	glGenBuffers(1, &vertexbuffer);
@@ -234,7 +368,8 @@ void transferDataToGPUMemory(Peca& pPeca, Peca& pNextPeca)
 	glBindBuffer(GL_ARRAY_BUFFER, texturebufferTot);
 	glBufferData(GL_ARRAY_BUFFER, g_texture_buffer_dataTot.size() * sizeof(float), g_texture_buffer_dataTot.data(), GL_STATIC_DRAW);
 
-	// Carregar informação próxima peça
+
+	// Carregar informação da próxima peça
 	glGenBuffers(1, &vertexbufferNextPiece);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferNextPiece);
 	glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data_next_piece.size() * sizeof(float), g_vertex_buffer_data_next_piece.data(), GL_STATIC_DRAW);
@@ -243,6 +378,25 @@ void transferDataToGPUMemory(Peca& pPeca, Peca& pNextPeca)
 	glBindBuffer(GL_ARRAY_BUFFER, texturebufferNextPiece);
 	glBufferData(GL_ARRAY_BUFFER, g_texture_buffer_data_next_piece.size() * sizeof(float), g_texture_buffer_data_next_piece.data(), GL_STATIC_DRAW);
 
+
+	// Carregar informação peça guardada por utilizador
+	glGenBuffers(1, &vertexbufferSavedPiece);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferSavedPiece);
+	glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data_saved_piece.size() * sizeof(float), g_vertex_buffer_data_saved_piece.data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &texturebufferSavedPiece);
+	glBindBuffer(GL_ARRAY_BUFFER, texturebufferSavedPiece);
+	glBufferData(GL_ARRAY_BUFFER, g_texture_buffer_data_saved_piece.size() * sizeof(float), g_texture_buffer_data_saved_piece.data(), GL_STATIC_DRAW);
+
+
+	// Carregar informação posição da peça na colisão
+	glGenBuffers(1, &vertexbufferPosPiece);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferPosPiece);
+	glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_data_pos_piece.size() * sizeof(float), g_vertex_buffer_data_pos_piece.data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &texturebufferPosPiece);
+	glBindBuffer(GL_ARRAY_BUFFER, texturebufferPosPiece);
+	glBufferData(GL_ARRAY_BUFFER, g_texture_buffer_data_pos_piece.size() * sizeof(float), g_texture_buffer_data_pos_piece.data(), GL_STATIC_DRAW);
 }
 
 //--------------------------------------------------------------------------------
@@ -254,7 +408,14 @@ void cleanupDataFromGPU()
 	glDeleteBuffers(1, &texturebufferTot);
 	glDeleteBuffers(1, &vertexbufferNextPiece);
 	glDeleteBuffers(1, &texturebufferNextPiece);
+	glDeleteBuffers(1, &vertexbufferSavedPiece);
+	glDeleteBuffers(1, &texturebufferSavedPiece);
+	glDeleteBuffers(1, &vertexbufferBackground);
+	glDeleteBuffers(1, &texturebufferBackground);
+	glDeleteBuffers(1, &vertexbufferPosPiece);
+	glDeleteBuffers(1, &texturebufferPosPiece);
 	glDeleteVertexArrays(1, &VertexArrayID);
+	glDeleteTextures(3, TextureID);
 	glDeleteProgram(programID);
 }
 
@@ -338,8 +499,16 @@ std::vector <int> avaliaEliminacaoLinhas(int** gameGrid) {
 
 bool evaluatePieceCollision(Peca& pPeca) {
 
+	// Sempre que haja colisão promover alterações a grelha de jogo, buffers (vertex e texture) e matriz de colisão
+	bool bCondicaoIf = pPeca.avaliaColisao();
+	/* Caso a peça não tenha sido "Dropped" (pelo utilizador, pressionando "space"), condição de If terá de contabilizar
+	também com o tempo de colisão da peça, visando melhor jogabilidade */
+	if (!bDropPeca) {
+		bCondicaoIf = (bCondicaoIf && timerCollision > 1);
+	}
+
 	// Avaliar colisão e verificar se a peça está colidida à mais de 1 segundo
-	if (pPeca.avaliaColisao() && timerCollision > 1) {
+	if (bCondicaoIf) {
 
 		// Avalia se jogo terminou
 		if (pPeca.atualizaMatriz()) {
@@ -371,7 +540,21 @@ bool evaluatePieceCollision(Peca& pPeca) {
 
 		// Verificar se nova colisão de peça promove eliminação de linhas
 		std::vector<int> vLinhasAEliminar = avaliaEliminacaoLinhas(gameGrid);
-		if (vLinhasAEliminar.size() != 0) {
+		int iNúmeroLinhasAEliminar = vLinhasAEliminar.size();
+
+		if (iNúmeroLinhasAEliminar != 0) {
+
+			// Atualizar variável de linhas eliminadas por nível
+			iTotalLinhasEliminadasEmNível += iNúmeroLinhasAEliminar;
+
+			// Atualizar pontuação
+			iPontuacao += pontosPorLinhasEliminadas(iNúmeroLinhasAEliminar);
+
+			// Atualizar nível de jogo
+			atualizaNivelJogo();
+
+			cout << "iPontuacao: " << iPontuacao << ", Nivel: " << iNivelJogo << ", iTotalLinhasEliminadasEmNível: " << iTotalLinhasEliminadasEmNível << endl;
+
 			// Começas a eliminar as linhas do topo e ir descendo, daí a inversão do vetor
 			for (int i = vLinhasAEliminar.size() - 1; i >= 0; i--) {
 				eliminaLinha(vLinhasAEliminar[i]);
@@ -390,7 +573,7 @@ bool evaluatePieceCollision(Peca& pPeca) {
 
 //--------------------------------------------------------------------------------
 
-bool drawObject(Peca& pPeca)
+bool drawCurrentObject(Peca& pPeca)
 {
 	// Use our shader
 	glUseProgram(programID);
@@ -401,6 +584,31 @@ bool drawObject(Peca& pPeca)
 
 	// Aplicação de rotação à peça
 	pPeca.rotacaoPeca(rot);
+	pPeca.translacaoPecaContorno(trans);
+
+	glm::mat4 MVP_PecaColisao = Projection * View * trans * rot;
+
+	// retrieve the matrix uniform locations
+	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_PecaColisao[0][0]);
+
+	// 1st attribute buffer : vertices
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferPosPiece);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	// 2nd attribute buffer : colors
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, texturebufferPosPiece);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	// Desenha objeto
+	pPeca.drawObject();
+
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+
+	trans = glm::mat4(1.0f);
+
 	// Aplicação de translação à peça
 	pPeca.translacaoPeca(trans);
 
@@ -425,11 +633,13 @@ bool drawObject(Peca& pPeca)
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 
-	// Se peça colidiu, não atualizar o tempo em que houve colisão
+	// Se peça colidiu, atualizar variável associada e não re-inicar contagem de tempo de colisão
 	if (pPeca.hasCollidedBottom()) {
 		bCollisionPiece = true;
 	}
 	else {
+		// Caso não tenha, resetar variável e iniciar contagem de tempo, destino a contabilizar o tempo de colisão
+		bCollisionPiece = false;
 		if (!bCollisionPiece) {
 			t_collision = std::chrono::high_resolution_clock::now();
 		}
@@ -446,62 +656,122 @@ bool drawObject(Peca& pPeca)
 
 //--------------------------------------------------------------------------------
 
-void drawPreviousObjects() {
+/* Usar função comum para desenhar peças anteriormente jogadas, próxima peça e peça guardada. Estas são diferenciadas
+pelo identificador (argumento da função) */
+void drawObjects(int iIdentificador) {
+
+	glUniform1i(globalBack, 0);
+
+	// Distinguir o que desenhar por recurso a identificador
+	GLuint iIDVertexBuffer;
+	GLuint iIDTextureBuffer;
+	int iDrawSize;
+	switch (iIdentificador) {
+		// Desenhar peças anteriormente jogadas
+		case 1:
+			iIDVertexBuffer = vertexbufferTot;
+			iIDTextureBuffer = texturebufferTot;
+			iDrawSize = g_vertex_buffer_dataTot.size();
+			break;
+		// Desenhar próxima peça
+		case 2:
+			iIDVertexBuffer = vertexbufferNextPiece;
+			iIDTextureBuffer = texturebufferNextPiece;
+			iDrawSize = g_vertex_buffer_data.size();
+			break;
+		// Desenhar peça guardada
+		case 3:
+			iIDVertexBuffer = vertexbufferSavedPiece;
+			iIDTextureBuffer = texturebufferSavedPiece;
+			// Distinguir entre a primeira vez que se guarda peça (não havida nenhuma antes) e as restantes vezes
+			iDrawSize = (iSavedPiece == 0) ? 0 : g_vertex_buffer_data.size();
+			break;
+	}
 
 	// Use our shader
 	glUseProgram(programID);
 
-	glm::mat4 MVP_PecaAnteriormenteJogadas = Projection * View;
+	glm::mat4 MVP_Matrix = Projection * View;
 
 	// retrieve the matrix uniform locations
-	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_PecaAnteriormenteJogadas[0][0]);
+	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_Matrix[0][0]);
 
 	// 1st attribute buffer : vertices
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferTot);
+	glBindBuffer(GL_ARRAY_BUFFER, iIDVertexBuffer);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// 2nd attribute buffer : colors
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, texturebufferTot);
+	glBindBuffer(GL_ARRAY_BUFFER, iIDTextureBuffer);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// Draw all the previously played pieces
-	glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_dataTot.size());
+	glDrawArrays(GL_TRIANGLES, 0, iDrawSize);
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 }
 
 //--------------------------------------------------------------------------------
-
-void drawNextPiece(Peca& pPeca) {
+void drawBackground() {
 
 	// Use our shader
 	glUseProgram(programID);
 
-	glm::mat4 MVP_ProximaPecaAJogar = Projection * View;
+	glUniform1i(globalBack, 1);
+
+	glm::mat4 MVP_Background = Projection * View;
 
 	// retrieve the matrix uniform locations
-	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_ProximaPecaAJogar[0][0]);
+	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_Background[0][0]);
 
 	// 1st attribute buffer : vertices
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferNextPiece);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferBackground);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// 2nd attribute buffer : colors
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, texturebufferNextPiece);
+	glBindBuffer(GL_ARRAY_BUFFER, texturebufferBackground);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	// Draw all the previously played pieces
-	glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_data.size());
+	glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_dataBack.size());
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 }
 
+//--------------------------------------------------------------------------------
+void drawGamegrid() {
+
+	// Use our shader
+	glUseProgram(programID);
+
+	glUniform1i(globalBack, 2);
+
+	glm::mat4 MVP_Background = Projection * View;
+
+	// retrieve the matrix uniform locations
+	glUniformMatrix4fv(MVP, 1, GL_FALSE, &MVP_Background[0][0]);
+
+	// 1st attribute buffer : vertices
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferGrid);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	// 2nd attribute buffer : colors
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, texturebufferGrid);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
+	// Draw all the previously played pieces
+	glDrawArrays(GL_TRIANGLES, 0, g_vertex_buffer_dataGrid.size());
+
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+}
 
 //--------------------------------------------------------------------------------
 void setMVP() {
@@ -521,9 +791,12 @@ void setMVP() {
 
 	// Texturas
 	// (0,0) canto superior esquerdo da imagem
+	glGenTextures(2, TextureID);
+
 	ucaTexData = stbi_load(caTiles, &iTexWidth, &iTexHeight, &iTexNumChannels, 0);
 
-	glBindTexture(GL_TEXTURE_2D, TextureID);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, TextureID[0]);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iTexWidth, iTexHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, ucaTexData);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -531,8 +804,52 @@ void setMVP() {
 
 	stbi_image_free(ucaTexData);
 
-	unsigned int globalTex = glGetUniformLocation(programID, "Texture");
-	glUniform1i(globalTex, 0);
+	ucaTexData = stbi_load(caBackground, &iTexWidth, &iTexHeight, &iTexNumChannels, 0);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, TextureID[1]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, iTexWidth, iTexHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, ucaTexData);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	stbi_image_free(ucaTexData);
+
+	ucaTexData = stbi_load(caGamegrid, &iTexWidth, &iTexHeight, &iTexNumChannels, 0);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, TextureID[2]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, iTexWidth, iTexHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, ucaTexData);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	stbi_image_free(ucaTexData);
+
+	// Move vertex data to video memory; specifically to VBO called vertexbufferBackground,
+	glGenBuffers(1, &vertexbufferBackground);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferBackground);
+	glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_dataBack.size() * sizeof(float), g_vertex_buffer_dataBack.data(), GL_STATIC_DRAW);
+
+	// Move color data to video memory; specifically to TBO called texturebufferBackground
+	glGenBuffers(1, &texturebufferBackground);
+	glBindBuffer(GL_ARRAY_BUFFER, texturebufferBackground);
+	glBufferData(GL_ARRAY_BUFFER, g_texture_buffer_dataBack.size() * sizeof(float), g_texture_buffer_dataBack.data(), GL_STATIC_DRAW);
+
+	// Move vertex data to video memory; specifically to VBO called vertexbufferBackground,
+	glGenBuffers(1, &vertexbufferGrid);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbufferGrid);
+	glBufferData(GL_ARRAY_BUFFER, g_vertex_buffer_dataGrid.size() * sizeof(float), g_vertex_buffer_dataGrid.data(), GL_STATIC_DRAW);
+
+	// Move color data to video memory; specifically to TBO called texturebufferBackground
+	glGenBuffers(1, &texturebufferGrid);
+	glBindBuffer(GL_ARRAY_BUFFER, texturebufferGrid);
+	glBufferData(GL_ARRAY_BUFFER, g_texture_buffer_dataGrid.size() * sizeof(float), g_texture_buffer_dataGrid.data(), GL_STATIC_DRAW);
+
+	// Use our shader
+	glUseProgram(programID);
+
+	globalBack = glGetUniformLocation(programID, "iBackground");
 }
 
 
@@ -565,6 +882,28 @@ void registerUserInputs(Peca& pPeca) {
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 		if (!pPeca.hasCollidedBottom()) {
 			pPeca.incNumberDown();
+			// Atualização de pontuação
+			iPontuacao++;
+		}
+	}
+
+	// Guardar peça
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+		if (glfwGetKey(window, GLFW_KEY_C) == GLFW_RELEASE) {
+			bAlteraPecaEmJogo = true;
+		}
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) {
+			bDropPeca = true;
+			// Descer peça até colidir. Retornará true caso colida
+			while (!drawCurrentObject(pPeca)) {
+				// Descer posição de peça enquanto não colidir
+				pPeca.incNumberDown();
+				// Atualização de pontuação
+				iPontuacao++;
+			}
 		}
 	}
 }
@@ -579,8 +918,8 @@ int main(void)
 	glfwInit();
 
 	glfwWindowHint(GLFW_SAMPLES, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -603,57 +942,121 @@ int main(void)
 	// Definir variáveis associadas a programa e MVP
 	setMVP();
 
+	// ------------------- Variáveis de peças -------------------------------//
+
 	// Criação de gerador de peças
-	geraPecas = GeradorPecas(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid);
-
+	geraPecas = GeradorPecas(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid, iNivelJogo);
+	
 	// Gera valor aletório, correspondente a peça de tabuleiro
-	iRandPiece = randNum();
-	// int valorTeste = 6;
-	// iRandPiece = valorTeste;
-	Peca* pPeca = returnPeca(geraPecas, iRandPiece);
-
+	iGamePiece = randNum();
+	Peca* pPeca = returnPeca(geraPecas, iGamePiece);
 
 	// Gera novo valor aletório, correspondente à próxima peça de tabuleiro
-	iRandPieceNextPiece = randNum();
-	// iRandPieceNextPiece = valorTeste;
-	Peca* pNextpPeca = returnPeca(geraPecas, iRandPieceNextPiece);
+	iGameNextPiece = randNum();
+	iSavedPiece = 0; // Valor não associada a nenhuma peça
+	Peca* pNextpPeca = returnPeca(geraPecas, iGameNextPiece);
+	Peca* pSavedpPeca = returnPeca(geraPecas, iGameNextPiece);
 
-	// transfer my data (vertices, colors, and shaders) to GPU side
+	/* Distingue entre o que desenhar na peça drawObjects:
+		> iIdentificador = 1 => desenhar todas as peças anteriormente jogadas
+		> iIdentificador = 2 => desenhar próxima peça a jogar
+		> iIdentificador = 3 => desenhar peça guardada pelo utilizador
+	*/
+	int iIdentificador;
+
+	// ----------------------------------------------------------------------//
 
 	GLuint FramebufferName = 0;
 	glGenFramebuffers(1, &FramebufferName);
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	// render scene for each frame
 	do {
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		transferDataToGPUMemory(*pPeca, *pNextpPeca);
 
 		// Register user inputs regarding piece movement
 		registerUserInputs(*pPeca);
 
+		// Utilizar clicou em "C" e pretende guardar a peça atual de jogo e instanciar a próxima
+		if (bAlteraPecaEmJogo) {
+
+			/* Verificar se havia uma peça guardada antes:
+				> Se houver, trocar peça pela atual
+				> Caso não haja, guardar peça atual em iSavedPiece e carregar para jogo próxima peça 
+					(iGameNextPiece)
+			*/
+			// Variável temporária para guardar informação de iGamePiece, para a atribuir a iSavedPiece
+			int iPieceTempVariable = iGamePiece;
+
+			// Alterar peça de jogo
+			iGamePiece = (iSavedPiece == 0) ? iGameNextPiece : iSavedPiece;
+			/* Caso não haja peças guardadas (primeira vez que se prime "C"), nova próxima peça terá de ser instanciada
+			pois peça atual de jogo será a que estava destinada a ser a próxima */
+			if (iSavedPiece == 0) {
+				iGameNextPiece = randNum();
+			}
+
+			// Guardar antiga peça de jogo em iSavedPiece
+			iSavedPiece = iPieceTempVariable;
+
+			// Instanciar peça
+			pPeca = returnPeca(geraPecas, iGamePiece);
+
+			// Resetar variável
+			bAlteraPecaEmJogo = false;
+
+			bCollisionPiece = false;
+		}
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Transferir informação para GPU, relativamente às peças desenhadas
+		transferDataToGPUMemory(*pPeca, *pNextpPeca, *pSavedpPeca);
+
+		// Draw background
+		glViewport(0, 0, WindowWidth, WindowHeight);
+		drawBackground();
+
+		// Draw gamegrid
+		glViewport(0, 0, WindowWidth, WindowHeight);
+		drawGamegrid();
+
 		// Draw previously played pieces into the board
 		glViewport(0, 0, WindowWidth, WindowHeight);
-		drawPreviousObjects();
+		drawObjects(1); // 1 => Identificador associado a desenhar todas as peças anteriormente jogadas
 
 		// drawing callback
 		glViewport(0, 0, WindowWidth, WindowHeight);
-		if (drawObject(*pPeca)) {
-
+		// Caso a peça tenha sido "dropped"
+		if (bDropPeca) {
 			bCollisionPiece = false;
-			// Instanciar a mesma peça que "iRandPieceNextPiece" indicou que vinha
-			iRandPiece = iRandPieceNextPiece;
-			pPeca = returnPeca(geraPecas, iRandPiece);
+			// Instanciar a mesma peça que "iGameNextPiece" indicou que vinha
+			iGamePiece = iGameNextPiece;
+			pPeca = returnPeca(geraPecas, iGamePiece);
 
 			// Alterar variável aleatória para gerar próxima peça
-			iRandPieceNextPiece = randNum();
-			// iRandPieceNextPiece = valorTeste;
+			iGameNextPiece = randNum();
 
+			// Reset de variável
+			bDropPeca = false;
+		}
+		// Descida natural da peça ou por cliquem em "Down" button, not "Dropped" (press space)
+		else {
+			if (drawCurrentObject(*pPeca)) {
+				bCollisionPiece = false;
+				// Instanciar a mesma peça que "iGameNextPiece" indicou que vinha
+				iGamePiece = iGameNextPiece;
+				pPeca = returnPeca(geraPecas, iGamePiece);
+
+				// Alterar variável aleatória para gerar próxima peça
+				iGameNextPiece = randNum();
+			}
 		}
 
 		// Representa a próxima peça
 		glViewport(WindowWidth*0.8, WindowHeight*0.5, WindowWidth*0.6, WindowHeight*0.6);
-		drawNextPiece(*pNextpPeca);
+		drawObjects(2); // 2 => Identificador associado a desenhar próxima peça
+
+		// Representa a peça guardada peça
+		glViewport(WindowWidth*0.8, WindowHeight*0.8, WindowWidth*0.6, WindowHeight*0.6);
+		drawObjects(3); // 3 => Identificador associado a desenhar peça guardada por utilizador
 
 		// Swap buffer
 		glfwSwapBuffers(window);

@@ -4,7 +4,7 @@
 // Construtores
 PecaS::PecaS() {};
 
-PecaS::PecaS(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** gameGrid) {
+PecaS::PecaS(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** gameGrid, int iGameLevel) {
 
 	// Variáveis da peça
 	xCR = 1.5f;
@@ -47,6 +47,8 @@ PecaS::PecaS(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** ga
 	bCollisionRight = false;
 	bRotationAllowed = true;
 	acertoPosicaoY = 0;
+
+	gameLevel = iGameLevel;
 
 	g_real_vertex_buffer = {};
 };
@@ -94,43 +96,82 @@ std::vector<GLfloat> PecaS::g_vertex_buffer_data = {
 // Textura da peça
 std::vector<GLfloat> PecaS::g_texture_buffer_data = {
 		//S
-		0.0f,  0.5f,
-		0.0f,  0.75f,
+		0.0f,   0.5f,
+		0.0f,   0.75f,
 		0.25f,  0.5f,
 
-		0.0f,  0.75f,
-		0.25f,  0.5f,
-		0.25f,  0.75f,
-
-		//
-		0.0f,  0.5f,
-		0.0f,  0.75f,
-		0.25f,  0.5f,
-
-		0.0f,  0.75f,
+		0.0f,   0.75f,
 		0.25f,  0.5f,
 		0.25f,  0.75f,
 
 		//
-		0.0f,  0.5f,
-		0.0f,  0.75f,
+		0.0f,   0.5f,
+		0.0f,   0.75f,
 		0.25f,  0.5f,
 
-		0.0f,  0.75f,
+		0.0f,   0.75f,
 		0.25f,  0.5f,
 		0.25f,  0.75f,
 
 		//
-		0.0f,  0.5f,
-		0.0f,  0.75f,
+		0.0f,   0.5f,
+		0.0f,   0.75f,
 		0.25f,  0.5f,
 
-		0.0f,  0.75f,
+		0.0f,   0.75f,
+		0.25f,  0.5f,
+		0.25f,  0.75f,
+
+		//
+		0.0f,   0.5f,
+		0.0f,   0.75f,
+		0.25f,  0.5f,
+
+		0.0f,   0.75f,
 		0.25f,  0.5f,
 		0.25f,  0.75f,
 };
 
 std::vector<GLfloat> PecaS::g_real_vertex_buffer = {};
+
+// Textura da posição de colisão da peça
+std::vector<GLfloat> PecaS::g_texture_buffer_dataPos = {
+		//S
+		0.0f,   1.0f,
+		0.25f,  1.0f,
+		0.0f,   0.75f,
+
+		0.25f,  1.0f,
+		0.0f,   0.75f,
+		0.25f,  0.75f,
+
+		//
+		0.0f,   1.0f,
+		0.25f,  1.0f,
+		0.0f,   0.75f,
+
+		0.25f,  1.0f,
+		0.0f,   0.75f,
+		0.25f,  0.75f,
+
+		//
+		0.0f,   1.0f,
+		0.25f,  1.0f,
+		0.0f,   0.75f,
+
+		0.25f,  1.0f,
+		0.0f,   0.75f,
+		0.25f,  0.75f,
+
+		//
+		0.0f,   1.0f,
+		0.25f,  1.0f,
+		0.0f,   0.75f,
+
+		0.25f,  1.0f,
+		0.0f,   0.75f,
+		0.25f,  0.75f,
+};
 
 // Preenchimento do vertexBuffer de acordo com rotação da peça e local de colisão, para armazenamento do vertexBuffer
 // das peças já jogadas (em Projeto.cpp)
@@ -599,10 +640,18 @@ void PecaS::rotacaoPeca(glm::mat4& rot) {
 
 }
 
+// Modificar o valor de tempo de acordo com o nível de jogo
+int PecaS::dropAccordingToLevel(double x) {
+	// 0.5 fator de multiplicação, visando melhor jogabilidade
+	// + 1, pois o primeiro nível é 0
+	return x * (gameLevel*0.5 + 1);
+}
+
 void PecaS::translacaoPeca(glm::mat4& trans) {
+
 	auto t_now = std::chrono::high_resolution_clock::now();
-	// <int> -> Forçar a que a variação de tempo considerada seja a cada segundo
-	int time = std::chrono::duration_cast<std::chrono::duration<int>>(t_now - t_start).count();
+	double timeDouble = std::chrono::duration_cast<std::chrono::duration<double>>(t_now - t_start).count();
+	int time = dropAccordingToLevel(timeDouble);
 
 	/* Se houve colisão, não reajustar variável associada a tempo, para garantir que peça se mantém
 	posição onde estava no momento de colisão. "time" influencia a descida da peça, daí ter esta avaliação */
@@ -627,6 +676,92 @@ void PecaS::translacaoPeca(glm::mat4& trans) {
 		oldValueTime = time;
 	}
 }
+
+// ---------------------------------------------------------------------------------
+
+int PecaS::collisionYPos() {
+
+	// Variáveis de acerto de acordo com rotação da peça
+	int yPos_Atual = yPos;
+	int iAltura, iLargura;
+	int valorRetorno = 0;
+	int xPosE_Acerto;
+
+	/* Avaliar colisão de Y, mediante a rotação. Haverá acerto das posições de X e diferentes avaliações mediante os pontos
+	de colisão associadas. Haverá um valor de retorno por defeito em cada caso */
+	switch (iNumberRotate % 4) {
+	case 0:
+		iAltura = 3;
+		iLargura = 2;
+		// Acerto na lateral da janela
+		xPosE_Acerto = xPosE;
+		if ((xPosE + iLargura) >= iWidth) {
+			xPosE_Acerto--;
+		}
+		for (int i = valorRetorno; i < yPos_Atual + iAltura - 1; i++) {
+			if ((gameGrid[xPosE_Acerto][i - 1] == 1) ||
+				(gameGrid[xPosE_Acerto + 1][i - 1] == 1) ||
+				(gameGrid[xPosE_Acerto + 2][i] == 1)) {
+				valorRetorno = i;
+			}
+		}
+		break;
+
+	case 2:
+		iAltura = 2;
+		iLargura = 3;
+		valorRetorno = valorRetorno;
+		// Acerto na lateral da janela
+		xPosE_Acerto = xPosE;
+		if ((xPosE + iLargura) > iWidth) {
+			xPosE_Acerto--;
+		}
+		
+		for (int i = 0; i < yPos_Atual + iAltura - 1; i++) {
+			if ((gameGrid[xPosE_Acerto][i - 1] == 1) ||
+				(gameGrid[xPosE_Acerto + 1][i - 1] == 1) ||
+				(gameGrid[xPosE_Acerto + 2][i] == 1)) {
+				valorRetorno = i;
+			}
+		}
+		valorRetorno++;
+		break;
+
+	case 1:
+	case 3:
+		iAltura = 3;
+		iLargura = 2;
+		valorRetorno = 1;
+		for (int i = valorRetorno; i < yPos_Atual + iAltura - 1; i++) {
+			if ((gameGrid[xPosE][i - 1] == 1) ||
+				(gameGrid[xPosE + 1][i - 2] == 1)) {
+				valorRetorno = i;
+			}
+		}
+		break;
+	}
+
+	return valorRetorno;
+}
+
+void PecaS::translacaoPecaContorno(glm::mat4& trans) {
+	// Dimensões e localização da peça da próxima rotação
+	int xPosE_Acerto, yPos_Acerto;
+
+	// Acerto de xPosE de acordo com rotação
+	switch (iNumberRotate % 4) {
+	case 0: xPosE_Acerto = xPosE; break;
+	case 1: xPosE_Acerto = xPosE - 1; break;
+	case 2: xPosE_Acerto = xPosE; break;
+	case 3: xPosE_Acerto = xPosE; break;
+	}
+	// Altura do ponto de colisão 
+	yPos_Acerto = collisionYPos();
+	// Translação de peça de contornos para posição correta da grelha
+	trans = glm::translate(trans, glm::vec3(xPosE_Acerto, yPos_Acerto, 0.0f));
+}
+
+// ---------------------------------------------------------------------------------
 
 void PecaS::drawObject() {
 	glDrawArrays(GL_TRIANGLES, 0, 8*3);
