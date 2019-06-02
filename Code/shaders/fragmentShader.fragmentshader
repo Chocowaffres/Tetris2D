@@ -6,6 +6,9 @@ in vec2 fragmentTexture;
 layout(binding=0) uniform sampler2D Tiletexture;
 layout(binding=1) uniform sampler2D Backgroundtexture;
 layout(binding=2) uniform sampler2D Gamegridtexture;
+layout(binding=3) uniform sampler2D Pausetexture;
+layout(binding=4) uniform sampler2D GameOvertexture;
+layout(binding=5) uniform sampler2D Controlstexture;
 
 uniform int iBackground;
 
@@ -19,6 +22,21 @@ void main(){
 	}
 	else if (iBackground == 2) {
 		color = texture(Gamegridtexture, fragmentTexture);
+	}
+	else if (iBackground == 3){
+		vec4 text = texture(Pausetexture, fragmentTexture);
+		text.a = 0.5; // opacidade
+		color = text;
+	}
+	else if (iBackground == 4){
+		vec4 text = texture(GameOvertexture, fragmentTexture);
+		text.a = 0.5; // opacidade
+		color = text;
+	}
+	else if (iBackground == 5){
+		vec4 text = texture(Controlstexture, fragmentTexture);
+		text.a = 0.5; // opacidade
+		color = text;
 	}
 	else {
 		color = texture(Tiletexture, fragmentTexture);
