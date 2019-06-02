@@ -7,7 +7,7 @@ PecaT::PecaT() {};
 
 PecaT::PecaT(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** gameGrid, int iGameLevel) {
 
-	// Variáveis da peça
+	// Variaveis da peca
 	xCR = 1.5f;
 	yCR = 0.5f;
 	iPieceWidth = 3;
@@ -16,13 +16,6 @@ PecaT::PecaT(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** ga
 	yPos = yPosInicial;
 	xPosE = xPosInicial;
 	xPosD = xPosInicial + iPieceWidth;
-
-	// Variáveis de tabuleiro
-	this->xPosInicial = xPosInicial;
-	this->yPosInicial = yPosInicial;
-	this->iHeight = iHeight;
-	this->iWidth = iWidth;
-
 
 	this->gameGrid = (int**)calloc(iWidth, sizeof(int*));
 	for (int i = 0; i < iWidth; i++) {
@@ -35,14 +28,31 @@ PecaT::PecaT(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** ga
 		}
 	}
 
-	// Variáveis de interacao com user
+	// Verificar se, aquando da instanciacao da peca, esta iria colidir com alguma ja presente no tabuleiro
+	// Para tal, acertar yPosInicial, subindo uma posicao na posicao de instancia de peca
+	for (int i = 0; i < iWidth; i++) {
+		if (gameGrid[i][yPos] == 1) {
+			yPosInicial++;
+			yPos = yPosInicial;
+			break;
+		}
+	}
+
+	// Variaveis de tabuleiro
+	this->xPosInicial = xPosInicial;
+	this->yPosInicial = yPosInicial;
+	this->iHeight = iHeight;
+	this->iWidth = iWidth;
+
+
+	// Variaveis de interacao com user
 	iNumberRotate = 0;
 	iNumberTranslation = 0;
 	iNumberDown = 0;
 
 	t_start = std::chrono::high_resolution_clock::now();
 
-	// Variáveis associadas a temporizador de colisão, visando melhor jogabilidade
+	// Variaveis associadas a temporizador de colisao, visando melhor jogabilidade
 	oldValueTime = 0;
 	bCollisionBottom = false;
 	bCollisionLeft = false;
@@ -56,8 +66,8 @@ PecaT::PecaT(int xPosInicial, int yPosInicial, int iHeight, int iWidth, int** ga
 
 };
 
-// Variáveis de classe
-// Desenho da peça
+// Variaveis de classe
+/// Desenho da peca
 std::vector<GLfloat> PecaT::g_vertex_buffer_data = {
 	//T
 		0.0f,  0.0f,  0.0f,
@@ -96,7 +106,7 @@ std::vector<GLfloat> PecaT::g_vertex_buffer_data = {
 		2.0f,  2.0f,  0.0f,
 };
 
-// Textura da peça
+/// Textura da peca
 std::vector<GLfloat> PecaT::g_texture_buffer_data = {
 		//T
 		0.25f,  0.0f,
@@ -137,7 +147,7 @@ std::vector<GLfloat> PecaT::g_texture_buffer_data = {
 
 std::vector<GLfloat> PecaT::g_real_vertex_buffer = {};
 
-// Textura da posição de colisão da peça
+/// Textura da posicao de colisao da peca
 std::vector<GLfloat> PecaT::g_texture_buffer_dataPos = {
 		//T
 		0.5f,   0.75f,
@@ -176,30 +186,30 @@ std::vector<GLfloat> PecaT::g_texture_buffer_dataPos = {
 		0.75f,  0.5f,
 };
 
-// Preenchimento do vertexBuffer de acordo com rotação da peça e local de colisão, para armazenamento do vertexBuffer
-// das peças já jogadas (em Projeto.cpp)
+/// Preenchimento do vertexBuffer de acordo com rotacao da peca e local de colisao, para armazenamento do vertexBuffer
+/// das pecas ja jogadas (em Projeto.cpp)
 void PecaT::preencheRealVertex(GLfloat x, GLfloat y) {
 	g_real_vertex_buffer.push_back(x);
 	g_real_vertex_buffer.push_back(y);
 	g_real_vertex_buffer.push_back(0.0f);
 }
 
-// Modificação de um bloco/quadricula da peça, repesentado por 2 triangulos
+/// Modificacao de um bloco/quadricula da peca, repesentado por 2 triangulos
 void PecaT::modificaQuadricula(GLfloat x, GLfloat y) {
 
-	// 3 vértice do triangulo inferior da quadricula
+	// 3 vertice do triangulo inferior da quadricula
 	preencheRealVertex(x, y);
 	preencheRealVertex(x + 1, y);
 	preencheRealVertex(x, y + 1);
 
-	// 3 vértice do triangulo superior da quadricula
+	// 3 vertice do triangulo superior da quadricula
 	preencheRealVertex(x + 1, y);
 	preencheRealVertex(x, y + 1);
 	preencheRealVertex(x + 1, y + 1);
 }
 
-// Peça quando desenhada está na origem. A colisão de peça, promove a invocação deste método que tratará de representar a peça,
-// sob a forma de vertexBuffer, tendo em conta local onde esta colidiu e a rotação da peça.
+/// Peca quando desenhada esta na origem. A colisao de peca, promove a invocacao deste metodo que tratara de representar a peca,
+/// sob a forma de vertexBuffer, tendo em conta local onde esta colidiu e a rotacao da peca.
 void PecaT::realVertexBuffer() {
 
 	int xPosAntes = xPosE;
@@ -265,7 +275,7 @@ void PecaT::realVertexBuffer() {
 			break;
 		}
 
-	// Reposição de valores de variáveis
+	// Reposicao de valores de variaveis
 	xPosE = xPosAntes;
 	yPos = yPosAntes;
 }
@@ -274,7 +284,7 @@ bool PecaT::preencheMatriz(int x, int y, int xAjuste, int yAjuste) {
 	// Altura
 	for (int i = 0; i < iPieceHeight; i++) {
 		// Jogo acabou
-		if (y + i > iHeight) {
+		if (y + i > iHeight - 2) {
 			return true;
 		}
 		gameGrid[x + xAjuste][y + i] = 1;
@@ -298,7 +308,7 @@ bool PecaT::atualizaMatriz() {
 
 bool PecaT::avaliaPotencialRotacao(int x, int y, int xAjuste, int yAjuste, int iPieceHeight, int xPosE, int xPosD) {
 
-	// Acertos nas interações com limites laterais de janela de jogo
+	// Acertos nas interacoes com limites laterais de janela de jogo
 	if (x < 0) {
 		x++;
 		xPosE++;
@@ -313,8 +323,8 @@ bool PecaT::avaliaPotencialRotacao(int x, int y, int xAjuste, int yAjuste, int i
 	// Altura
 	for (int i = 0; i < iPieceHeight; i++) {
 		// Jogo acabou
-		if (y + i > iHeight) {
-			return false;
+		if (y + i > iHeight - 2) {
+			return true;
 		}
 		if (gameGrid[x + xAjuste][y + i] == 1) {
 			return false;
@@ -327,30 +337,30 @@ bool PecaT::avaliaPotencialRotacao(int x, int y, int xAjuste, int yAjuste, int i
 		}
 	}
 
-	// É possivel fazer a rotação
+	// e possivel fazer a rotacao
 	return true;
 }
 
 bool PecaT::avaliaColisao() {
 
-	// Dimensões e localização da peça da próxima rotação
+	// Dimensoes e localizacao da peca da proxima rotacao
 	int iPieceHeight_AvaliaRotacaoSeguinte;
 	int iPieceWidth_AvaliaRotacaoSeguinte;
 	int xPosE_AvaliaRotacaoSeguinte;
 
-	// Reset de variáveis
+	// Reset de variaveis
 	bCollisionBottom = false;
 	bCollisionLeft = false;
 	bCollisionRight = false;
 	bRotationAllowed = true;
 
-	// Colisão com base de jogo
+	// Colisao com base de jogo
 	if (yPos == 0) {
 		bCollisionBottom = true;
 	}
 
-	/* Colisão com outras peças, tendo em consideração a rotação da peça
-	Diferentes variáveis são atualizadas, mediante o ponto de colisão, avaliadas em registerUserInputs, em main.cpp */
+	/* Colisao com outras pecas, tendo em consideracao a rotacao da peca
+	Diferentes variaveis sao atualizadas, mediante o ponto de colisao, avaliadas em registerUserInputs, em main.cpp */
 	switch (iNumberRotate % 4) {
 		case 0: 
 			// Bottom collision
@@ -376,12 +386,12 @@ bool PecaT::avaliaColisao() {
 				}
 			}
 
-			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
+			/* Calculo de parametros de acordo com rotacao seguinte, seguindo a mesma logica de atualizaMatriz, com os ajustes necessarios */
 			iPieceHeight_AvaliaRotacaoSeguinte = 3;
 			iPieceWidth_AvaliaRotacaoSeguinte = 2;
 			xPosE_AvaliaRotacaoSeguinte = xPosE + 1;
 
-			// Verificar rotação por recurso a função
+			// Verificar rotacao por recurso a funcao
 			bRotationAllowed = avaliaPotencialRotacao(
 				xPosE_AvaliaRotacaoSeguinte, (yPos - 1), 0, trunc(iPieceHeight_AvaliaRotacaoSeguinte / 2),
 				iPieceWidth_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
@@ -414,12 +424,12 @@ bool PecaT::avaliaColisao() {
 						bCollisionRight = true;
 				}
 			}
-			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
+			/* Calculo de parametros de acordo com rotacao seguinte, seguindo a mesma logica de atualizaMatriz, com os ajustes necessarios */
 			iPieceHeight_AvaliaRotacaoSeguinte = 2;
 			iPieceWidth_AvaliaRotacaoSeguinte = 3;
 			xPosE_AvaliaRotacaoSeguinte = xPosE - 1;
 
-			// Verificar rotação por recurso a função
+			// Verificar rotacao por recurso a funcao
 			bRotationAllowed = avaliaPotencialRotacao(
 				xPosE_AvaliaRotacaoSeguinte, yPos, trunc(iPieceWidth_AvaliaRotacaoSeguinte / 2), iPieceHeight_AvaliaRotacaoSeguinte - 1,
 				iPieceWidth_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
@@ -452,12 +462,12 @@ bool PecaT::avaliaColisao() {
 				}
 			}
 
-			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
+			/* Calculo de parametros de acordo com rotacao seguinte, seguindo a mesma logica de atualizaMatriz, com os ajustes necessarios */
 			iPieceHeight_AvaliaRotacaoSeguinte = 3;
 			iPieceWidth_AvaliaRotacaoSeguinte = 2;
 			xPosE_AvaliaRotacaoSeguinte = xPosE;
 
-			// Verificar rotação por recurso a função
+			// Verificar rotacao por recurso a funcao
 			bRotationAllowed = avaliaPotencialRotacao(
 				xPosE_AvaliaRotacaoSeguinte, yPos, iPieceWidth_AvaliaRotacaoSeguinte - 1, trunc(iPieceHeight_AvaliaRotacaoSeguinte / 2),
 				iPieceWidth_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
@@ -489,12 +499,12 @@ bool PecaT::avaliaColisao() {
 				}
 			}
 
-			/* Cálculo de parâmetros de acordo com rotação seguinte, seguindo a mesma lógica de atualizaMatriz, com os ajustes necessários */
+			/* Calculo de parametros de acordo com rotacao seguinte, seguindo a mesma logica de atualizaMatriz, com os ajustes necessarios */
 			iPieceHeight_AvaliaRotacaoSeguinte = 2;
 			iPieceWidth_AvaliaRotacaoSeguinte = 3;
 			xPosE_AvaliaRotacaoSeguinte = xPosE;
 
-			// Verificar rotação por recurso a função
+			// Verificar rotacao por recurso a funcao
 			bRotationAllowed = avaliaPotencialRotacao(
 				xPosE_AvaliaRotacaoSeguinte, yPos + 1, trunc(iPieceWidth_AvaliaRotacaoSeguinte / 2), 0,
 				iPieceWidth_AvaliaRotacaoSeguinte, xPosE_AvaliaRotacaoSeguinte,
@@ -502,8 +512,8 @@ bool PecaT::avaliaColisao() {
 			);
 			break;
 	}
-	/* Apena agora será retornado o valor de colisão para garantir que as restantes variáveis (bCollisionLeft e bCollisionRight)
-	são atualizadas de acordo com a situação de colisão */
+	/* Apena agora sera retornado o valor de colisao para garantir que as restantes variaveis (bCollisionLeft e bCollisionRight)
+	sao atualizadas de acordo com a situacao de colisao */
 	if (bCollisionBottom) {
 		return true;
 	}
@@ -514,18 +524,18 @@ void PecaT::atualizaPos() {
 	// Posicao inicial
 	switch (iNumberRotate % 4) {
 		case 0:
-			// Tamanho da peça
+			// Tamanho da peca
 			iPieceWidth = 3;
 			iPieceHeight = 2;
 
-			// Ajuste de posições
+			// Ajuste de posicoes
 			xPosD = xPosE + iPieceWidth;
 
-			// Rotação junto da parede do lado direito
+			// Rotacao junto da parede do lado direito
 			if (xPosD > iWidth) {
-				// Garantir que peça se mantém dentro da janela de visualização
+				// Garantir que peca se mantem dentro da janela de visualizacao
 				iNumberTranslation--;
-				// Reajustar posição da peça resultante de ajuste
+				// Reajustar posicao da peca resultante de ajuste
 				xPosE--;
 				xPosD--;
 			}
@@ -533,37 +543,37 @@ void PecaT::atualizaPos() {
 			break;
 
 		case 1:
-			// Tamanho da peça
+			// Tamanho da peca
 			iPieceWidth = 2;
 			iPieceHeight = 3;
 
-			// Ajuste de posições
+			// Ajuste de posicoes
 			xPosE++;
 			xPosD = xPosE + iPieceWidth;
 			yPos--;
 
-			// Caso em que é necessário garantir que peça não desce para fora da janela de visualização
+			// Caso em que e necessario garantir que peca nao desce para fora da janela de visualizacao
 			if (yPos <= 0) {
-				// Garantir que peça se mantém dentro da janela de visualização 
+				// Garantir que peca se mantem dentro da janela de visualizacao 
 				acertoPosicaoY += -yPos;
 			}
 
 			break;
 
 		case 2:
-			// Tamanho da peça
+			// Tamanho da peca
 			iPieceWidth = 3;
 			iPieceHeight = 2;
 
-			// Ajuste de posições
+			// Ajuste de posicoes
 			xPosD = xPosE + iPieceWidth;
 			yPos--;
 
-			// Rotação junto da parede do lado esquerdo
+			// Rotacao junto da parede do lado esquerdo
 			if (xPosE < 0) {
-				// Garantir que peça se mantém dentro da janela de visualização
+				// Garantir que peca se mantem dentro da janela de visualizacao
 				iNumberTranslation++;
-				// Reajustar posição da peça resultante de ajuste
+				// Reajustar posicao da peca resultante de ajuste
 				xPosE++;
 				xPosD++;
 			}
@@ -571,18 +581,18 @@ void PecaT::atualizaPos() {
 			break;
 
 		case 3:
-			// Tamanho da peça
+			// Tamanho da peca
 			iPieceWidth = 2;
 			iPieceHeight = 3;
 
-			// Ajuste de posições
+			// Ajuste de posicoes
 			xPosD = xPosE + iPieceWidth;
 
 			yPos--;
 
-			// Caso em que é necessário garantir que peça não desce para fora da janela de visualização
+			// Caso em que e necessario garantir que peca nao desce para fora da janela de visualizacao
 			if (yPos <= 0) {
-				// Garantir que peça se mantém dentro da janela de visualização 
+				// Garantir que peca se mantem dentro da janela de visualizacao 
 				acertoPosicaoY += -yPos;
 			}
 
@@ -590,48 +600,55 @@ void PecaT::atualizaPos() {
 		}
 }
 
-// glm::mat4& rot => alternativa a  glm::mat4 *rot aqui, com chamada de funçao &rot, ao inves de rot
+/// glm::mat4& rot => alternativa a  glm::mat4 *rot aqui, com chamada de funcao &rot, ao inves de rot
 void PecaT::rotacaoPeca(glm::mat4& rot) {
 
-	// Transladar para origem da peça, rodar 90 graus e retornar à sua posição original 
+	// Transladar para origem da peca, rodar 90 graus e retornar a sua posicao original 
 	rot = glm::translate(rot, glm::vec3(xCR, yCR, 0.0f));
 	rot = glm::rotate(rot, glm::radians(iNumberRotate * -90.f), glm::vec3(0.0f, 0.0f, 1.0f));
 	rot = glm::translate(rot, glm::vec3(-xCR, -yCR, 0.0f));
 
 }
 
-// Modificar o valor de tempo de acordo com o nível de jogo
+/// Modificar o valor de tempo de acordo com o nivel de jogo
 int PecaT::dropAccordingToLevel(double x) {
-	// 0.5 fator de multiplicação, visando melhor jogabilidade
-	// + 1, pois o primeiro nível é 0
+	// 0.5 fator de multiplicacao, visando melhor jogabilidade
+	// + 1, pois o primeiro nivel e 0
 	return x * (gameLevel*0.5 + 1);
 }
 
-void PecaT::translacaoPeca(glm::mat4& trans) {
+void PecaT::translacaoPeca(glm::mat4& trans, bool bPause) {
 
 	auto t_now = std::chrono::high_resolution_clock::now();
 	double timeDouble = std::chrono::duration_cast<std::chrono::duration<double>>(t_now - t_start).count();
 	int time = dropAccordingToLevel(timeDouble);
 
-	/* Se houve colisão, não reajustar variável associada a tempo, para garantir que peça se mantém
-	posição onde estava no momento de colisão. "time" influencia a descida da peça, daí ter esta avaliação */
+	/* Se houve colisao, nao reajustar variavel associada a tempo, para garantir que peca se mantem
+	posicao onde estava no momento de colisao. "time" influencia a descida da peca, dai ter esta avaliacao */
 	if (bCollisionBottom) {
 		time = oldValueTime;
 	}
 
-	// Peça desce pelo ecrã, a cada segundo
+	// Peca desce pelo ecra, a cada segundo
 	yPos = yPosInicial - time - iNumberDown * .5 + acertoPosicaoY;
 
-	// Trata das translações para esquerda e direita ("+" -> direita, "-" -> esquerda)
+	// Parar a peca em caso de pause
+	if (bPause) {
+		yPosInicial = yPos;
+		iNumberDown = 0;
+		t_start = std::chrono::high_resolution_clock::now();
+	}
+
+	// Trata das translacoes para esquerda e direita ("+" -> direita, "-" -> esquerda)
 	xPosE = xPosInicial + iNumberTranslation;
 
 	trans = glm::translate(trans, glm::vec3(xPosE, yPos, 0.0f));
 
-	/* Atualiza posições para avaliação de colisões, preenchimento de matriz e proxima iteração de draw
-	(no caso de alteração relativamente a iNumberTranslation) */
+	/* Atualiza posicoes para avaliacao de colisoes, preenchimento de matriz e proxima iteracao de draw
+	(no caso de alteracao relativamente a iNumberTranslation) */
 	atualizaPos();
 
-	// Caso não tenha havido colisão, atualizar variável de tempo anterior.
+	// Caso nao tenha havido colisao, atualizar variavel de tempo anterior.
 	if (!bCollisionBottom) {
 		oldValueTime = time;
 	}
@@ -641,14 +658,14 @@ void PecaT::translacaoPeca(glm::mat4& trans) {
 
 int PecaT::collisionYPos() {
 
-	// Variáveis de acerto de acordo com rotação da peça
+	// Variaveis de acerto de acordo com rotacao da peca
 	int yPos_Atual = yPos;
 	int iAltura, iLargura;
 	int valorRetorno = 0;
 	int xPosE_Acerto;
 
-	/* Avaliar colisão de Y, mediante a rotação. Haverá acerto das posições de X e diferentes avaliações mediante os pontos
-	de colisão associadas. Haverá um valor de retorno por defeito em cada caso */
+	/* Avaliar colisao de Y, mediante a rotacao. Havera acerto das posicoes de X e diferentes avaliacoes mediante os pontos
+	de colisao associadas. Havera um valor de retorno por defeito em cada caso */
 	switch (iNumberRotate % 4) {
 		case 0:
 			iAltura = 2;
@@ -710,19 +727,19 @@ int PecaT::collisionYPos() {
 }
 
 void PecaT::translacaoPecaContorno(glm::mat4& trans) {
-	// Dimensões e localização da peça da próxima rotação
+	// Dimensoes e localizacao da peca da proxima rotacao
 	int xPosE_Acerto, yPos_Acerto;
 
-	// Acerto de xPosE de acordo com rotação
+	// Acerto de xPosE de acordo com rotacao
 	switch (iNumberRotate % 4) {
 	case 0: xPosE_Acerto = xPosE; break;
 	case 1: xPosE_Acerto = xPosE - 1; break;
 	case 2: xPosE_Acerto = xPosE; break;
 	case 3: xPosE_Acerto = xPosE; break;
 	}
-	// Altura do ponto de colisão 
+	// Altura do ponto de colisao 
 	yPos_Acerto = collisionYPos();
-	// Translação de peça de contornos para posição correta da grelha
+	// Translacao de peca de contornos para posicao correta da grelha
 	trans = glm::translate(trans, glm::vec3(xPosE_Acerto, yPos_Acerto, 0.0f));
 }
 
