@@ -1,3 +1,7 @@
+/////////////////////////////////////////////
+// Developed by Tiago Roxo and Joana Costa //
+/////////////////////////////////////////////
+
 #include "headers/GeradorPecas.hpp"
 
 #include <memory>
@@ -13,7 +17,7 @@ GeradorPecas::GeradorPecas(int xPosInicial, int yPosInicial, int iHeight, int iW
 	pecaL(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid, iGameLevel),
 	pecaI(xPosInicial, yPosInicial, iHeight, iWidth, gameGrid, iGameLevel) {
 
-	// Variáveis de tabuleiro
+	// VariÃ¡veis de tabuleiro
 	this->xPosInicial = xPosInicial;
 	this->yPosInicial = yPosInicial;
 	this->iHeight = iHeight;
