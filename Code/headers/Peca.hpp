@@ -1,3 +1,7 @@
+/////////////////////////////////////////////
+// Developed by Tiago Roxo and Joana Costa //
+/////////////////////////////////////////////
+
 #pragma once
 
 #include "headers/Peca.hpp"
@@ -56,14 +60,14 @@ class Peca
 	virtual void decNumberTranslation() = 0;
 	virtual void incNumberDown() = 0;
 
-	// Desenho geomÈtrico
+	// Desenho geom√©trico
 	virtual void drawObject() = 0;
 
-	// Vari·veis de classe
-	// Desenho da peÁa
+	// Vari√°veis de classe
+	// Desenho da pe√ßa
 	static std::vector<GLfloat> g_vertex_buffer_data;
 
-	// Cor da peÁa
+	// Cor da pe√ßa
 	static std::vector<GLfloat> g_texture_buffer_data;
 
 	static std::vector<GLfloat> g_real_vertex_buffer;
