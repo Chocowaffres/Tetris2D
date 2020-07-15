@@ -1,3 +1,8 @@
+/////////////////////////////////////////////
+// Developed by Tiago Roxo and Joana Costa //
+/////////////////////////////////////////////
+
+
 #include "headers/Font.hpp"
 
 // Construtores
@@ -213,7 +218,7 @@ std::vector<GLfloat> Two::g_texture_buffer_data = {
 // Construtores
 Three::Three() {};
 
-// Vertices da três
+// Vertices da trÃªs
 std::vector<GLfloat> Three::g_vertex_buffer_data = {
 		// Parte baixo
 		0.0f, 0.0f, 0.0f,
@@ -252,7 +257,7 @@ std::vector<GLfloat> Three::g_vertex_buffer_data = {
 		1.0f, 1.6f, 0.0f,
 };
 
-// Textura da três
+// Textura da trÃªs
 std::vector<GLfloat> Three::g_texture_buffer_data = {
 		// Parte baixo
 		0.51f,  1.0f,
@@ -1176,7 +1181,7 @@ std::vector<GLfloat> Score::g_texture_buffer_data = {
 // Construtores
 Level::Level() {};
 
-// Vértices de "LEVEL"
+// VÃ©rtices de "LEVEL"
 std::vector<GLfloat> Level::g_vertex_buffer_data = {
 	// L
 	0.0f, 0.0f, 0.0f,
@@ -1420,7 +1425,7 @@ std::vector<GLfloat> Level::g_texture_buffer_data = {
 // Construtores
 Lines::Lines() {};
 
-// Vértices de "LINES"
+// VÃ©rtices de "LINES"
 std::vector<GLfloat> Lines::g_vertex_buffer_data = {
 	// L
 	0.0f, 0.0f, 0.0f,
@@ -1713,7 +1718,7 @@ std::vector<GLfloat> Lines::g_texture_buffer_data = {
 // Construtores
 Next::Next() {};
 
-// Vértices de "NEXT"
+// VÃ©rtices de "NEXT"
 std::vector<GLfloat> Next::g_vertex_buffer_data = {
 	// N
 	0.8f, 0.0f, 0.0f,
@@ -1907,7 +1912,7 @@ std::vector<GLfloat> Next::g_texture_buffer_data = {
 // Construtores
 Hold::Hold() {};
 
-// Vértices de "HOLD"
+// VÃ©rtices de "HOLD"
 std::vector<GLfloat> Hold::g_vertex_buffer_data = {
 	// H
 	0.0f, 0.7f, 0.0f,
