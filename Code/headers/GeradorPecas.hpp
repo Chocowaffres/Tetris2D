@@ -1,3 +1,7 @@
+/////////////////////////////////////////////
+// Developed by Tiago Roxo and Joana Costa //
+/////////////////////////////////////////////
+
 #pragma once
 #include "headers/PecaL.hpp"
 #include "headers/PecaJ.hpp"
@@ -12,7 +16,7 @@
 class GeradorPecas {
 
 	private:
-		// Vari·veis de gerador
+		// Vari√°veis de gerador
 		PecaZ pecaZ;
 		PecaT pecaT;
 		PecaJ pecaJ;
