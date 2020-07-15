@@ -1,4 +1,8 @@
-﻿#include "headers/PecaL.hpp"
+/////////////////////////////////////////////
+// Developed by Tiago Roxo and Joana Costa //
+/////////////////////////////////////////////
+
+#include "headers/PecaL.hpp"
 #include "headers/PecaJ.hpp"
 #include "headers/PecaS.hpp"
 #include "headers/PecaI.hpp"
