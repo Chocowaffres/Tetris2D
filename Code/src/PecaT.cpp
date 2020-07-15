@@ -1,3 +1,7 @@
+/////////////////////////////////////////////
+// Developed by Tiago Roxo and Joana Costa //
+/////////////////////////////////////////////
+
 #include "headers/PecaT.hpp"
 #include "headers/Peca.hpp"
 #include <iostream>
