@@ -1,4 +1,8 @@
-// Garante que ficheiro atual apenas È incluÌdo uma vez durante o processo de compilaÁ„o
+/////////////////////////////////////////////
+// Developed by Tiago Roxo and Joana Costa //
+/////////////////////////////////////////////
+
+// Garante que ficheiro atual apenas √© inclu√≠do uma vez durante o processo de compila√ß√£o
 #pragma once 
 
 #include "headers/Peca.hpp"
@@ -19,7 +23,7 @@ using namespace glm;
 class PecaT : public Peca
 {
 	private:
-		// Vari·veis da peÁa
+		// Vari√°veis da pe√ßa
 		float xCR;
 		float yCR;
 		int iPieceWidth;
@@ -29,19 +33,19 @@ class PecaT : public Peca
 		int xPosE;
 		int xPosD;
 
-		// Vari·veis de tabuleiro
+		// Vari√°veis de tabuleiro
 		int** gameGrid;
 		int xPosInicial;
 		int yPosInicial;
 		int iHeight;
 		int iWidth;
 
-		// Vari·veis de interacao com user
+		// Vari√°veis de interacao com user
 		int iNumberRotate;
 		int iNumberTranslation;
 		int iNumberDown;
 
-		// Vari·veis associadas a temporizador de colis„o, visando melhor jogabilidade
+		// Vari√°veis associadas a temporizador de colis√£o, visando melhor jogabilidade
 		int oldValueTime;
 		bool bCollisionBottom;
 		bool bCollisionLeft;
@@ -73,7 +77,7 @@ class PecaT : public Peca
 		int collisionYPos();
 		void translacaoPecaContorno(glm::mat4& trans);
 
-		// Atualizar queda de peÁa de acordo com nÌvel de jogo
+		// Atualizar queda de pe√ßa de acordo com n√≠vel de jogo
 		int dropAccordingToLevel(double);
 
 		// Getters
@@ -97,21 +101,21 @@ class PecaT : public Peca
 		void decNumberTranslation();
 		void incNumberDown();
 
-		// Desenho geomÈtrico
+		// Desenho geom√©trico
 		void drawObject();
 
-		// Vari·veis de classe
-		// Desenho da peÁa
+		// Vari√°veis de classe
+		// Desenho da pe√ßa
 		static std::vector<GLfloat> g_vertex_buffer_data;
 
-		// Cor da peÁa
+		// Cor da pe√ßa
 		static std::vector<GLfloat> g_texture_buffer_data;
 
 		static std::vector<GLfloat> g_real_vertex_buffer;
 
-		// Desenho da peÁa
+		// Desenho da pe√ßa
 		static std::vector<GLfloat> g_vertex_buffer_dataPos;
 
-		// Textura da posiÁ„o de colis„o da peÁa
+		// Textura da posi√ß√£o de colis√£o da pe√ßa
 		static std::vector<GLfloat> g_texture_buffer_dataPos;
 };
